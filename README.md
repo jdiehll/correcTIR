@@ -1,4 +1,4 @@
-<img src='./Figures/logo.pnglogo.png' align="right" height="175" />
+<img src='./Figures/logo.png' align="right" height="175" />
 
 <br><br>  <!-- Adds vertical space -->
 
@@ -88,7 +88,7 @@ sitename_YYYYMMDD_HHmmss.tiff
 **Example:** NIWOT_20211002_141503.tiff
   
 <figure>
-    <img src='./Figures/FolderStructure.pngFolderStructure.png' height="350" />
+    <img src='./Figures/FolderStructure.png' height="350" />
 </figure>
 
 ### Point Data

@@ -32,13 +32,13 @@
 
 ## Overview
 
-The TIR Post suite enhances the consistency and reliability of thermal measurements by standardizing the thermal data post-processing workflow. The GUI is designed to help new users swiftly process temperature data, while the Python package provides comprehensive customization options for more experienced users. TIR Post is capable of handling thermal data both as images (stored in .tiff format) and as point measurements (stored in .csv format with each entry as a row), with temperature values in degrees Celsius.
+CorrecTIR enhances the consistency and reliability of thermal measurements by standardizing the thermal data post-processing workflow. The GUI is designed to help new users swiftly process temperature data, while the Python package provides comprehensive customization options for more experienced users. TIR Post is capable of handling thermal data both as images (stored in .tiff format) and as point measurements (stored in .csv format with each entry as a row), with temperature values in degrees Celsius.
 
 For detailed file formatting and setup instructions, see the [Set-Up](#set-up) section below.  
 To learn more about the overall pipeline workflow, refer to [Pipeline Workflow](PipelineWorkflow.md).  
 For specific function details, check the [Function Reference](Function_Reference.md).
 
-The development of the TIR Post suite is grounded in rigorous thermal theory, aiming to address the common challenges in thermal data accuracy and utility. For a comprehensive explanation of the theoretical foundations and expanded details on the functionalities of TIR Post, please consult:
+The development of correcTIR is grounded in rigorous thermal theory, aiming to address the common challenges in thermal data accuracy and utility. For a comprehensive explanation of the theoretical foundations and expanded details on the functionalities of TIR Post, please consult:
 
 >Placeholder for my paper
 
@@ -47,7 +47,7 @@ The development of the TIR Post suite is grounded in rigorous thermal theory, ai
 
 ## Set-Up
 
-To ensure smooth use of the TIR Post suite, your input data must follow specific structures. Below are the key requirements. Blank templates are available in the **"Template"** folder. For practical examples and additional guidance, see [Example Use](#example-use) section and **"Test Data"** folder.
+To ensure smooth use of correcTIR, your input data must follow specific structures. Below are the key requirements. Blank templates are available in the **"Template"** folder. For practical examples and additional guidance, see [Example Use](#example-use) section and **"Test Data"** folder.
 
 For image-based processing, you will need:
 
@@ -71,7 +71,7 @@ For point-based processing, you will need:
 
 🚀 Once your input data is in the correct format, you are ready to run the pipeline! You can now jump to the [Configuration File](#configuration-file) section to set up your processing for both Python package and GUI usage.
 
-_Note: TIR Post is optimized for handling data from individual sites one at a time._
+_Note: correcTIR is optimized for handling data from individual sites one at a time._
 
 ### Image Folder Structure & Naming
 

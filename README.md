@@ -2,7 +2,7 @@
 
 <br><br>  <!-- Adds vertical space -->
 
-# TIRPost
+# CorrecTIR
 
 &nbsp;  <!-- Adds an empty space to create separation -->
 

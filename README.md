@@ -185,7 +185,7 @@ The .csv file should start with a header row specifying the label and then pairs
 
 Now that your input files are in the correct format, you are ready to run the processing pipeline. The workflow for both the Python package and the GUI is illustrated below:
 <figure>
-    <img src='./Figures/TIRPost Workflow.jpg' height="300" />
+    <img src='./Figures/TIRPost Workflow.jpg' height="100" />
 </figure>
 
 The GUI guides users through all steps and functions automatically, ensuring a seamless workflow.

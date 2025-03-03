@@ -86,7 +86,9 @@ Images/ Year/ Month/
 * Each image should follow this naming convention:
   
 sitename_YYYYMMDD_HHmmss.tiff
-  
+
+_Note: HHmmss can be in any timezone as long as it is applied consistently across all input files._
+
 **Example:** NIWOT_20211002_141503.tiff
   
 <figure>
@@ -105,7 +107,7 @@ sitename_YYYYMMDD_HHmmss.tiff
   
 **Column Descriptions:**
 
-timestamp: Represents the date and time of the recorded measurement in MM/DD/YY HH:mm format. This timestamp uses the 24-hour **local** time notation, where '14:30' indicates 2:30 PM.
+timestamp: Represents the date and time of the recorded measurement in MM/DD/YY HH:mm format. This timestamp uses the 24-hour time notation, where '14:30' indicates 2:30 PM. Any timezone is acceptable as long as it is applied consistently across all input files.
   
 temp_value: Temperature measurements in degrees Celsius.
 
@@ -121,7 +123,7 @@ Processing thermal data requires additional environmental data, ideally collecte
 
 **Column Descriptions:**
 
-TIMESTAMP_END: Represents the end date and time of the recorded measurement in MM/DD/YY HH:mm format. This timestamp uses the 24-hour **local** time notation, where '14:35' indicates 2:35 PM.
+TIMESTAMP_END: Represents the end date and time of the recorded measurement in MM/DD/YY HH:mm format. This timestamp uses the 24-hour time notation, where '14:35' indicates 2:35 PM. Any timezone is acceptable as long as it is applied consistently across all input files.
   
 T_air: Air temperature measurements in degrees Celsius.
 

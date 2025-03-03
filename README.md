@@ -32,13 +32,13 @@
 
 ## Overview
 
-CorrecTIR enhances the consistency and reliability of thermal measurements by standardizing the thermal data post-processing workflow. The GUI is designed to help new users swiftly process temperature data, while the Python package provides comprehensive customization options for more experienced users. TIR Post is capable of handling thermal data both as images (stored in .tiff format) and as point measurements (stored in .csv format with each entry as a row), with temperature values in degrees Celsius.
+CorrecTIR enhances the consistency and reliability of thermal measurements by standardizing the thermal data post-processing workflow. The GUI is designed to help new users swiftly process temperature data, while the Python package provides comprehensive customization options for more experienced users. CorrecTIR is capable of handling thermal data both as images (stored in .tiff format) and as point measurements (stored in .csv format with each entry as a row), with temperature values in degrees Celsius.
 
 For detailed file formatting and setup instructions, see the [Set-Up](#set-up) section below.  
 To learn more about the overall pipeline workflow, refer to [Pipeline Workflow](PipelineWorkflow.md).  
 For specific function details, check the [Function Reference](Function_Reference.md).
 
-The development of correcTIR is grounded in rigorous thermal theory, aiming to address the common challenges in thermal data accuracy and utility. For a comprehensive explanation of the theoretical foundations and expanded details on the functionalities of TIR Post, please consult:
+The development of correcTIR is grounded in rigorous thermal theory, aiming to address the common challenges in thermal data accuracy and utility. For a comprehensive explanation of the theoretical foundations and expanded details on the functionalities of CorrecTIR, please consult:
 
 >Placeholder for my paper
 
@@ -68,6 +68,8 @@ For point-based processing, you will need:
 ✅ [Auxiliary data](#auxiliary-data-files) (1 or 2 files, depending on measurement interval)
 
 📌 Total: 2–3 files
+
+⏳ Timezone: Your data must include a timestamp field in the required format to properly align images and point measurements. However, any timezone is acceptable as long as it is applied consistently across all input files. We recommend using local time.
 
 🚀 Once your input data is in the correct format, you are ready to run the pipeline! You can now jump to the [Configuration File](#configuration-file) section to set up your processing for both Python package and GUI usage.
 
@@ -212,11 +214,12 @@ The following table lists and describes the required inputs for processing image
 | `flux_met_data_path`    | File path to .csv file containing flux data (**optional**, if at different interval)        |
 | `flux_met_window`       | Search window for flux data (integer, in minutes, **optional**)        |
 | `emissivity`            | Target emissivity value (float)           |
+| `elevation`            | Site elevation for water density correction (float)           |
 | `roi_path`              | File path to the .csv file containing ROI (Region of Interest) data                 |
 | `roi_dist_path`         | File path to the .csv file containing ROI distance data             |
 | `data_type`             | ROI distance data type (**point cloud** or **average**)           |
 | `first_image_path`      | File path to a .tiff image used to set configuration **(doesn't have to be first image)**   |
-| `base_folder`           | Path to base image folder (whre images are stored should be called 'Images' per folder structure)|
+| `base_folder`           | Path to base image folder |
 | `output_csv_path`       | File path where the output .csv will be stored **(automatically created)**           |
 
 **Python Package:** You must manually enter these inputs into a .json configuration file. The file must be named "config.json" for the package to work with the entire processing pipeline.
@@ -236,6 +239,7 @@ The following table lists and describes the required inputs for processing point
 | `flux_met_data_path`    | File path to .csv file containing flux data (**optional**, if at different interval) |
 | `flux_met_window`       | Search window for flux data (integer, in minutes, **optional**)                |
 | `emissivity`            | Target emissivity value (float)                          |
+| `elevation`            | Site elevation for water density correction (float)           |
 | `point_data_path`       | File path to the .csv file containing point data                                      |
 | `point_dist`           | Distance from the instrument to the target (float, in **meters**)                |
 | `output_csv_path`       | File path where the output .csv will be stored **(automatically created)**                           |

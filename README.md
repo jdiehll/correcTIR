@@ -214,9 +214,9 @@ The following table lists and describes the required inputs for processing image
 |-----------------------| ---------------------------------------------------------------------------------------------|
 | `data`                  | image                                                                                        |
 | `aux_met_data_path`     | File path to .csv file containing auxillary data                      |
-| `aux_met_window`        | Search window for auxiliary data (integer, in minutes)                        |
+| `aux_met_window`        | Search window for auxiliary data (integer, in minutes). This window determines how far **forward** in time to search for matching auxiliary data relative to the thermal data timestamp.                      |
 | `flux_met_data_path`    | File path to .csv file containing flux data (**optional**, if at different interval)        |
-| `flux_met_window`       | Search window for flux data (integer, in minutes, **optional**)        |
+| `flux_met_window`       | Search window for flux data (integer, in minutes, **optional**). This window determines how far **forward** in time to search for matching auxiliary data relative to the thermal data timestamp.      |
 | `emissivity`            | Target emissivity value (float)           |
 | `elevation`            | Site elevation for water density correction (float)           |
 | `roi_path`              | File path to the .csv file containing ROI (Region of Interest) data                 |
@@ -241,9 +241,9 @@ The following table lists and describes the required inputs for processing point
 |-----------------------| -----------------------------------------------------------------------|
 | `data`                  | point                                                                  |
 | `aux_met_data_path`     | File path to .csv file containing auxillary data                              |
-| `aux_met_window`        | Search window for auxiliary data (integer, in minutes)                     |
+| `aux_met_window`        | Search window for auxiliary data (integer, in minutes). This window determines how far **forward** in time to search for matching auxiliary data relative to the thermal data timestamp.                    |
 | `flux_met_data_path`    | File path to .csv file containing flux data (**optional**, if at different interval) |
-| `flux_met_window`       | Search window for flux data (integer, in minutes, **optional**)                |
+| `flux_met_window`       | Search window for flux data (integer, in minutes, **optional**). This window determines how far **forward** in time to search for matching auxiliary data relative to the thermal data timestamp.              |
 | `emissivity`            | Target emissivity value (float)                          |
 | `elevation`            | Site elevation for water density correction (float)           |
 | `point_data_path`       | File path to the .csv file containing point data                                      |

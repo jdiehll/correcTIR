@@ -113,7 +113,7 @@ temp_value: Temperature measurements in degrees Celsius.
 
 ### Auxiliary Data File(s)
 
-Processing thermal data requires additional environmental data, ideally collected at the same time interval as the thermal measurements. You can specify the search window (in minutes) to match the auxiliary data with thermal data timestamps. See the [Example Use](#example-use) section for details.
+Processing thermal data requires additional environmental data, ideally collected at the same time interval as the thermal measurements. To align these datasets, you can specify a search window (in minutes), which defines how far forward in time the system will look to find the closest available auxiliary data point that matches each thermal data timestamp. If no auxiliary data point is found within the specified search window, the corresponding thermal measurement will not be processed. This ensures that only thermal data with valid environmental context are included in the analysis. See the [Example Use](#example-use) section for details.
 
 | TIMESTAMP_END     | T_air    | RH      | LW_IN   |
 |-------------------|----------|---------|---------|

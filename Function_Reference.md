@@ -52,10 +52,11 @@
 
 ## Atmospheric Functions (located in Main_Functions.py)
 
-| Function Name | Arguments | Description | Returns |
-|--------------|-----------|-------------|---------|
-| **vapor_density** | `T_air` (float): Air temperature in Celsius. `RH` (float): Relative humidity in percentage (0 to 100). | Computes the **actual vapor density** in the air using the **Clausius-Clapeyron relation** and the **ideal gas law**. | `float`: Actual vapor density in g/m³. |
-| **atm_trans** | `dist` (float): Distance to the object. `rho_v` (float): Vapor density in g/m³. | Estimates **atmospheric transmittance** using an **abbreviated LOWTRAN model**, accounting for vapor density effects over distance. | `float`: Atmospheric transmittance (ratio between 0 and 1). |
+| Function Name           | Arguments                                                                 | Description                                                                                     | Returns                                         |
+|------------------------|-----------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|-------------------------------------------------|
+| **pressure_at_elevation** | `h` (float): Elevation in meters.                                      | Calculates atmospheric pressure at a given elevation using the simplified barometric formula.  | `float`: Atmospheric pressure in Pascals (Pa). |
+| **vapor_density**      | `T_air` (float): Air temperature in Celsius. <br> `RH` (float): Relative humidity in percentage (0 to 100). <br> `P` (float): Atmospheric pressure in Pascals (Pa). | Computes the **actual vapor density** in the air using the **Clausius-Clapeyron relation** and the **ideal gas law**, adjusting for atmospheric pressure. | `float`: Actual vapor density in g/m³. |
+| **atm_trans**         | `dist` (float): Distance to the object. <br> `rho_v` (float): Vapor density in g/m³. | Estimates **atmospheric transmittance** using an **abbreviated LOWTRAN model**, accounting for vapor density effects over distance. | `float`: Atmospheric transmittance (ratio between 0 and 1). |
 
 ## Stefan-Boltzmann Law Functions (located in Main_Functions.py)
 

@@ -416,6 +416,8 @@ You may be wondering what your output looks like. Your output file is a .csv wit
 
 For each Region of Interest (ROI_X), the following values are computed as additional columns in output .csv file:
 
+| **Column Header**       | **Description**  |
+|-------------------------|-----------------|
 | `ROI_X_{stat}_uncorrected` |	Uncorrected thermal reading for {stat} (mean or percentile).   |
 | `ROI_X_{stat}_fully_corrected` |	Fully corrected thermal reading for {stat}.|
 | `ROI_X_{stat}_tau1` |	Thermal reading for {stat} with atmospheric corrections turned off. |

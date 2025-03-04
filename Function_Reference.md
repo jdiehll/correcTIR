@@ -50,7 +50,8 @@
 | **find_matching_logger_data_point** | `timestamp` (str): Target timestamp. `Aux_Met_Data` (pd.DataFrame): Auxiliary meteorological data. `FLUX_Met_Data` (pd.DataFrame): FLUX meteorological data. `Aux_Met_window` (int): Time window for auxiliary data matching. `FLUX_Met_window` (int): Time window for FLUX data matching. | Extracts meteorological data matching the provided timestamp, prioritizing `Aux_Met_Data`. If `sky_temp` is missing, `FLUX_Met_Data` is checked. | `dict`: Contains extracted meteorological data (`T_air`, `RH`, `sky_temp`, `LW_IN`, `rho_v`, and `tau`). |
 | **process_and_export_corrected_point_data** | `output_csv_path` (str): Path to store the processed CSV file. `point_data_path` (str): Path to the CSV file containing point data. `point_dist` (float): Distance value for the point data. `Aux_Met_Data` (pd.DataFrame): Auxiliary meteorological data. `FLUX_Met_Data` (pd.DataFrame): FLUX meteorological data. `Aux_Met_window` (int): Time window for auxiliary data matching. `FLUX_Met_window` (int): Time window for FLUX data matching. `emissivity` (float): Emissivity value. | Processes point data by applying temperature corrections and adding meteorological variables. Saves the processed data to a CSV file. | `pd.DataFrame`: Processed data containing meteorological values and corrected point values. |
 
-## Atmospheric Functions (located in Main_Functions.py)
+## Atmospheric Functions
+(located in Main_Functions.py)
 
 | Function Name           | Arguments                                                                 | Description                                                                                     | Returns                                         |
 |------------------------|-----------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|-------------------------------------------------|

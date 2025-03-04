@@ -1,4 +1,4 @@
-# TIRPost Detailed Pipeline Processing
+# correcTIR Detailed Pipeline Processing
 
 ## Summary
 * [Entry Point](#entry-point): `run_pipeline()`

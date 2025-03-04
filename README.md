@@ -260,7 +260,7 @@ Once the .json file is created, you're ready to process your point data!
 
 ## Python Package
 
-For users who want to run individual functions or the full pipeline in Python, the TIRPost package can be downloaded, installed, and executed as follows:
+For users who want to run individual functions or the full pipeline in Python, the correcTIR package can be downloaded, installed, and executed as follows:
 
 ### Installation
 
@@ -278,7 +278,7 @@ If you don’t have Git installed, you can download the repository manually by c
 Move into the project folder:
 
 ```
-cd TIRPost
+cd correcTIR
 ```
 
 3. Create and Activate a Virtual Environment (Recommended)
@@ -291,7 +291,7 @@ _Note it may be necessary to type python3 and not just python._
 
 For instructions on creating a Conda environment, refer to the [conda documentation](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html). 
 
-Once the virtual environment is created, install all required TIRPost dependencies (see [Requirements](#requirements) section). 
+Once the virtual environment is created, install all required correcTIR dependencies (see [Requirements](#requirements) section). 
 
 4. Pull the Latest Updates (Optional but Recommended)
 To update your local copy of the repository:
@@ -301,18 +301,18 @@ git pull origin main
 
 ### Running the Processing Pipeline
 
-To successfully run the TIRPost package, follow these steps:
+To successfully run the correcTIR package, follow these steps:
 
 1. Prepare Your Files
 * Ensure all required files are in the correct format, naming convention, and folder structure.
 * Update and name your configuration file as "config.json" with your specific input details.
-* Be sure all required TIRPost dependencies are installed (see [Requirements](#requirements) section).
+* Be sure all required correcTIR dependencies are installed (see [Requirements](#requirements) section).
 _ Again we recommend working in a virtual environment._
 
 2. Navigate to the Project Folder
 Open a terminal and move into the project directory:
 ```
-cd TIRPost
+cd correcTIR
 ```
 
 3. Run the Processing Pipeline
@@ -326,29 +326,29 @@ This will begin processing your data using the inputs defined in "config.json".
 
 ### Running Individual Functions
 
-In addition to running the full TIRPost processing pipeline, you can also call individual functions from the Python package for custom workflows.
+In addition to running the full correcTIR processing pipeline, you can also call individual functions from the Python package for custom workflows.
 
 To do this, simply import and run the desired function in your Python script or interactive session.
 
 Example: Converting Radiance to Temperature
 ```
-from TIRPost.Main_Functions import radiance_to_temp
+from correcTIR.Main_Functions import radiance_to_temp
 
 radiance_to_temp()
 ```
 
 Example: Saving Thermal Image
 ```
-from TIRPost.ROI_Viz_Functions import save_thermal_image
+from correcTIR.ROI_Viz_Functions import save_thermal_image
 
 save_thermal_image()
 ```
 For a full list of available functions and their required arguments, refer to the [Function Reference](Function_Reference.md).
 
 ## GUI
-For users who prefer a graphical user interface (GUI), the TIRPost GUI is available as a pre-compiled application for the three most commonly used operating systems. The GUI is designed exclusively for running the entire processing pipeline—it does not support running individual functions separately. The GUI walks users through all necessary inputs, generates a config.json file, and then runs the pipeline. For more details, see [Example Use](#example-use) section.
+For users who prefer a graphical user interface (GUI), the correcTIR GUI is available as a pre-compiled application for the three most commonly used operating systems. The GUI is designed exclusively for running the entire processing pipeline—it does not support running individual functions separately. The GUI walks users through all necessary inputs, generates a config.json file, and then runs the pipeline. For more details, see [Example Use](#example-use) section.
 
-_Note: TIR Post is not available on mobile devices (Android, iPhone)._
+_Note: correcTIR is not available on mobile devices (Android, iPhone)._
 
 Regardless of the OS used either a Conda or Python virtual environment is recommended. Without a virtual environemt or Conda environment pyinstaller may not be available unless added to the path variable. 
 
@@ -413,11 +413,28 @@ You may be wondering what your output looks like. Your output file is a .csv wit
 | `LW_IN`              | Longwave incoming radiation measured in **W/m²**. |
 | `rho_v`              | Water vapor density in the air, measured in **g/m³**. |
 | `tau`                | Atmospheric transmittance. |
-| `ROI_X_uncorrected`  | Uncorrected thermal reading from **ROI X** area. |
-| `ROI_X_fully_corrected`    | Fully corrected thermal reading from **ROI X** area. |
-| `ROI_X_tau1`    | Thermal reading from **ROI X** area if atmospheric corrections are turned off. |
-| `ROI_X_objemiss1`    | Thermal reading from **ROI X** area if reflected radiation is turned off. |
-| _..._                | **Repeated ROI columns** for however many ROIs are present. |
+
+For each Region of Interest (ROI_X), the following values are computed as additional columns in output .csv file:
+
+| `ROI_X_{stat}_uncorrected` |	Uncorrected thermal reading for {stat} (mean or percentile).   |
+| `ROI_X_{stat}_fully_corrected` |	Fully corrected thermal reading for {stat}.|
+| `ROI_X_{stat}_tau1` |	Thermal reading for {stat} with atmospheric corrections turned off. |
+| `ROI_X_{stat}_objemiss1` |	Thermal reading for {stat} with reflected radiation corrections turned off.|
+
+where {stat} represents one of the following statistical measures:
+
+mean: Mean value
+p1: 1st percentile
+p5: 5th percentile
+p10: 10th percentile
+p25: 25th percentile
+p50: 50th percentile (median)
+p75: 75th percentile
+p90: 90th percentile
+p95: 95th percentile
+p99: 99th percentile
+
+These values are repeated for all available ROIs in the dataset.
 
 ### Points
 
@@ -450,7 +467,7 @@ Input Parameters:
 - filename (str, optional): Name of the .csv file to save the data to. Defaults to "rois.csv".
 
 ```
-from TIRPost import draw_and_label_poly_rois, save_rois_to_csv
+from correcTIR import draw_and_label_poly_rois, save_rois_to_csv
 
 rois = draw_and_label_poly_rois('path/to/tiff/thermal/image/to/draw/ROIs.tiff')
 save_rois_to_csv (rois, 'path/to/save/rois.csv')
@@ -467,7 +484,7 @@ Input Parameters:
 - output_image_path (str, optional): Path to save the overlay image. If None, the image is not saved.
 
 ```
-from TIRPost import overlay_rois_from_csv
+from correcTIR import overlay_rois_from_csv
 
 overlay_rois_from_csv('path/to/tiff/thermal/image.tiff', 'path/to/csv/of/ROIs.csv','path/to/save/thermal/image.png')
 
@@ -482,7 +499,7 @@ Input Parameters:
 - save_path (str): Path to save the output image.
 - colormap (str): The colormap to use. Default is 'inferno'.
 ```
-from TIRPost import save_thermal_image
+from correcTIR import save_thermal_image
 
 save_thermal_image('path/to/tiff/thermal/image.tiff','path/to/save/thermal/image.png')
 

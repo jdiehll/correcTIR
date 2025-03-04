@@ -123,11 +123,13 @@ Processing thermal data requires additional environmental data, ideally collecte
 
 **Column Descriptions:**
 
+_Note: The order of the columns does not impact processing. Additional columns can be included in the dataset as long as the required columns are present and correctly labeled._
+
 TIMESTAMP_END: Represents the end date and time of the recorded measurement in MM/DD/YY HH:mm format. This timestamp uses the 24-hour time notation, where '14:35' indicates 2:35 PM. Any timezone is acceptable as long as it is applied consistently across all input files.
   
 T_air: Air temperature measurements in degrees Celsius.
 
-RH: Relative humidity measuremetns in integer percent (%).
+RH: Relative humidity measuremetns in float percent (%).
 
 LW_IN: Incoming longwave radiation measuremetns in W/m².
 
@@ -145,7 +147,7 @@ _This file is **not** required if you're processing point-based measurements._
 
 For image-based processing, the distance between the temperature measurement instrument and the region(s) of interest must be specified. You can provide this information using one of two methods:
 
-* Point Cloud: For more precise distance corrections, you can supply a point cloud (.csv) containing the distance **(in meters)** of each pixel from the camera within its field of view (FOV).
+* Point Cloud Projection: For more precise distance corrections, you can supply a point cloud (.csv) containing the distance **(in meters)** of each pixel from the camera within its field of view (FOV).
 
 Example: If your thermal camera has a resolution of 480 × 640 pixels, your point cloud .csv should contain 480 rows and 640 columns, with each cell representing the distance (in meters) from the camera to that pixel. Examples files can be found in the "Test Data" folder. 
 
@@ -159,7 +161,7 @@ Example: If your thermal camera has a resolution of 480 × 640 pixels, your poin
 
 **Column Descriptions:**
 
-label: A unique identified for the region of interest.
+label: A unique identified for the region of interest. This label must be consistent across all processing steps and should match the label used for the Region of Interest (ROI) file in image processing.
   
 average_distance: Average distance from the camera to specified region of interest in meters.
   
@@ -177,7 +179,7 @@ The ROI file defines regions of interest (ROIs) within thermal image datasets. I
 
 **Column Descriptions:**
 
-Label: A unique identified for the region of interest.
+Label: A unique identified for the region of interest. This label must be consistent across all processing steps and should match the label used for the Average Distance file if using.
   
 Point_1_x, Point_1_y: The x- and y-coordinates (in pixels) of the first point defining the ROI.
 
@@ -224,6 +226,8 @@ The following table lists and describes the required inputs for processing image
 | `base_folder`           | Path to base image folder |
 | `output_csv_path`       | File path where the output .csv will be stored **(automatically created)**           |
 
+_Note: The order of the labels does not impact processing as long as the required input fields are present and correctly labeled. No additional parameters should be present._
+
 **Python Package:** You must manually enter these inputs into a .json configuration file. The file must be named "config.json" for the package to work with the entire processing pipeline.
 
 **GUI:** A built-in guide assists in creating the .json configuration file.
@@ -245,6 +249,8 @@ The following table lists and describes the required inputs for processing point
 | `point_data_path`       | File path to the .csv file containing point data                                      |
 | `point_dist`           | Distance from the instrument to the target (float, in **meters**)                |
 | `output_csv_path`       | File path where the output .csv will be stored **(automatically created)**                           |
+
+_Note: The order of the labels does not impact processing as long as the required input fields are present and correctly labeled. No additional parameters should be present._
 
 **Python Package:** You must manually enter these inputs into a .json configuration file. The file must be named "config.json" for the package to work with the entire processing pipeline.
 

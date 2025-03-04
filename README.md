@@ -425,16 +425,16 @@ For each Region of Interest (ROI_X), the following values are computed as additi
 
 where {stat} represents one of the following statistical measures:
 
-mean: Mean value
-p1: 1st percentile
-p5: 5th percentile
-p10: 10th percentile
-p25: 25th percentile
-p50: 50th percentile (median)
-p75: 75th percentile
-p90: 90th percentile
-p95: 95th percentile
-p99: 99th percentile
+* mean: Mean value
+* p1: 1st percentile
+* p5: 5th percentile
+* p10: 10th percentile
+* p25: 25th percentile
+* p50: 50th percentile (median)
+* p75: 75th percentile
+* p90: 90th percentile
+* p95: 95th percentile
+* p99: 99th percentile
 
 These values are repeated for all available ROIs in the dataset.
 

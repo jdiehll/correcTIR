@@ -226,7 +226,7 @@ The following table lists and describes the required inputs for processing image
 | `base_folder`           | Path to base image folder |
 | `output_csv_path`       | File path where the output .csv will be stored **(automatically created)**           |
 
-_Note: The order of the labels does not impact processing as long as the required input fields are present and correctly labeled. No additional parameters should be present._
+_Note: The order of the inputs does not impact processing as long as the required input fields are present and correctly labeled. No additional parameters should be present._
 
 **Python Package:** You must manually enter these inputs into a .json configuration file. The file must be named "config.json" for the package to work with the entire processing pipeline.
 
@@ -250,7 +250,7 @@ The following table lists and describes the required inputs for processing point
 | `point_dist`           | Distance from the instrument to the target (float, in **meters**)                |
 | `output_csv_path`       | File path where the output .csv will be stored **(automatically created)**                           |
 
-_Note: The order of the labels does not impact processing as long as the required input fields are present and correctly labeled. No additional parameters should be present._
+_Note: The order of the inputs does not impact processing as long as the required input fields are present and correctly labeled. No additional parameters should be present._
 
 **Python Package:** You must manually enter these inputs into a .json configuration file. The file must be named "config.json" for the package to work with the entire processing pipeline.
 
@@ -323,6 +323,12 @@ python main.py
 _Note: It may be necessary to type python3 and not just python._
 
 This will begin processing your data using the inputs defined in "config.json".
+
+4. Track Progress
+A pop-up window will open, displaying real-time progress by tracking the number of processed images out of the total. This allows you to monitor the status of the processing pipeline.
+
+5. Completion
+Once processing is complete and the progress bar reaches 100%, you can close the pop-up window. Your processed data will now be available for review.
 
 ### Running Individual Functions
 

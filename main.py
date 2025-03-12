@@ -1,5 +1,5 @@
- # Import the main pipeline function from TIRPost package
-from TIRPost.Main_Functions import run_pipeline
+ # Import the main pipeline function from correcTIR package
+from correcTIR.Main_Functions import run_pipeline
 
 # Define the config path
 config_path = './config.json'

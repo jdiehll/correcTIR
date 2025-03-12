@@ -129,9 +129,9 @@ TIMESTAMP_END: Represents the end date and time of the recorded measurement in M
   
 T_air: Air temperature measurements in degrees Celsius.
 
-RH: Relative humidity measuremetns in float percent (%).
+RH: Relative humidity measurements in float percent (%).
 
-LW_IN: Incoming longwave radiation measuremetns in W/m².
+LW_IN: Incoming longwave radiation measurements in W/m².
 
 _Note: The software supports reading multiple auxiliary files when variables are recorded at different time intervals. For example:_
 

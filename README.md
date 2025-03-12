@@ -149,7 +149,7 @@ For image-based processing, the distance between the temperature measurement ins
 
 * Point Cloud Projection: For more precise distance corrections, you can supply a point cloud (.csv) containing the distance **(in meters)** of each pixel from the camera within its field of view (FOV).
 
-Example: If your thermal camera has a resolution of 480 × 640 pixels, your point cloud .csv should contain 480 rows and 640 columns, with each cell representing the distance (in meters) from the camera to that pixel. Examples files can be found in the "Test Data" folder. 
+Example: If your thermal camera has a resolution of 480 × 640 pixels, your point cloud .csv should contain 480 rows and 640 columns, with each cell representing the distance (in meters) from the camera to that pixel. Example files can be found in the "Test Data" folder. 
 
 * Average Distance(s): Alternatively, you can manually enter the average distance(s) for each region of interest.
   
@@ -161,7 +161,7 @@ Example: If your thermal camera has a resolution of 480 × 640 pixels, your poin
 
 **Column Descriptions:**
 
-label: A unique identified for the region of interest. This label must be consistent across all processing steps and should match the label used for the Region of Interest (ROI) file in image processing.
+label: A unique identifier for the region of interest. This label must be consistent across all processing steps and should match the label used for the Region of Interest (ROI) file in image processing.
   
 average_distance: Average distance from the camera to specified region of interest in meters.
   
@@ -179,7 +179,7 @@ The ROI file defines regions of interest (ROIs) within thermal image datasets. I
 
 **Column Descriptions:**
 
-Label: A unique identified for the region of interest. This label must be consistent across all processing steps and should match the label used for the Average Distance file if using.
+Label: A unique identifier for the region of interest. This label must be consistent across all processing steps and should match the label used for the Average Distance file if using.
   
 Point_1_x, Point_1_y: The x- and y-coordinates (in pixels) of the first point defining the ROI.
 

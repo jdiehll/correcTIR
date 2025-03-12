@@ -1206,7 +1206,7 @@ def radiance_from_temperature(T):
 
 def radiance_to_temp(E):
     """
-    Calculate temperature from radiant flux based on Stefan-Boltzmann Law.
+    Calculate temperature from radiant flux based on Stefan-Boltzmann Law, using the absolute value of radiant flux.
 
     Parameters:
     E (float): Radiant flux in W/m^-2
@@ -1216,10 +1216,11 @@ def radiance_to_temp(E):
     """
     # Stefan-Boltzmann constant (in W/m^2K^4)
     sigma = 5.67e-8  
+
+    # Use the absolute value of E to ensure the calculation is always valid
+    T = (abs(E) / sigma) ** 0.25
     
-    T = (E / sigma) ** 0.25
-    
-    #Convert temperature to Celsius
+    # Convert temperature to Celsius
     T_celsius = T - 273.15
     
     return T_celsius

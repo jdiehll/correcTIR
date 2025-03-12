@@ -2,7 +2,7 @@
 
 <br><br>  <!-- Adds vertical space -->
 
-# CorrecTIR
+# correcTIR
 
 &nbsp;  <!-- Adds an empty space to create separation -->
 
@@ -32,13 +32,13 @@
 
 ## Overview
 
-CorrecTIR enhances the consistency and reliability of thermal measurements by standardizing the thermal data post-processing workflow. The GUI is designed to help new users swiftly process temperature data, while the Python package provides comprehensive customization options for more experienced users. CorrecTIR is capable of handling thermal data both as images (stored in .tiff format) and as point measurements (stored in .csv format with each entry as a row), with temperature values in degrees Celsius.
+correcTIR enhances the consistency and reliability of thermal measurements by standardizing the thermal data post-processing workflow. The GUI is designed to help new users swiftly process temperature data, while the Python package provides comprehensive customization options for more experienced users. correcTIR is capable of handling thermal data both as images (stored in .tiff format) and as point measurements (stored in .csv format with each entry as a row), with temperature values in degrees Celsius.
 
 For detailed file formatting and setup instructions, see the [Set-Up](#set-up) section below.  
 To learn more about the overall pipeline workflow, refer to [Pipeline Workflow](PipelineWorkflow.md).  
 For specific function details, check the [Function Reference](Function_Reference.md).
 
-The development of correcTIR is grounded in rigorous thermal theory, aiming to address the common challenges in thermal data accuracy and utility. For a comprehensive explanation of the theoretical foundations and expanded details on the functionalities of CorrecTIR, please consult:
+The development of correcTIR is grounded in rigorous thermal theory, aiming to address the common challenges in thermal data accuracy and utility. For a comprehensive explanation of the theoretical foundations and expanded details on the functionalities of correcTIR, please consult:
 
 >Placeholder for my paper
 

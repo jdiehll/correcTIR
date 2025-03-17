@@ -1126,7 +1126,7 @@ def pressure_at_elevation(h):
 
 def vapor_density(T_air, RH, P):
     """
-    Calculate actual vapor density given air temperature and relative humidity.
+    Calculate actual vapor density given air temperature, relative humidity, and pressure.
 
     Parameters:
     T_air (float): Air temperature in Celsius

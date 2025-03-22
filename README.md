@@ -379,7 +379,7 @@ python pyinstaller -w --noupx --onedir ThermalCam.py
 
 ### Linux
 ```bash
-python pyinstaller --windowed --onedir ThermalCam.py
+pyinstaller --windowed --onedir correcTIR.py
 ```
 
 ## Requirements

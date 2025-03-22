@@ -369,12 +369,12 @@ Once a virtual environment is created install all of the TIR dependencies see [R
 
 ### Windows
 ```
-python pyinstaller --windowed --onedir  ThermalCam.py
+pyinstaller --windowed --onedir  .\correcTIR.py
 ```
 
 ### MacOS
 ```
-python pyinstaller -w --noupx --onedir ThermalCam.py
+pyinstaller -w --noupx --onedir correcTIR.py
 ```
 
 ### Linux

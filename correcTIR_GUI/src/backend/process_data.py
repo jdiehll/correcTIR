@@ -30,7 +30,7 @@ def process_data(config_path: str):
 
     if data_type == 'image':
         # Initializing step
-        Aux_Met_Data, FLUX_Met_Data, roi_masks, average_distances, Aux_Met_window, FLUX_Met_window, base_folder, output_csv_path, emissivity = TCMainFunctions.initialize_data_from_config_image(config_path)
+        Aux_Met_Data, FLUX_Met_Data, roi_masks, average_distances, Aux_Met_window, FLUX_Met_window, base_folder, output_csv_path, emissivity, elevation = TCMainFunctions.initialize_data_from_config_image(config_path)
 
         # Process images in the specified folder and obtain the resulting DataFrame
         TCMainFunctions.setup_gui_and_start(
@@ -42,11 +42,12 @@ def process_data(config_path: str):
             Aux_Met_window,            # Time window for auxiliary data matching
             FLUX_Met_window,           # Time window for FLUX data matching (optional)
             output_csv_path,           # Path to store final processed CSV file
-            emissivity                 # Emissivity value
+            emissivity,                # Emissivity value
+            elevation
         )
     elif data_type == 'point':
         # Initializing step
-        Aux_Met_Data, FLUX_Met_Data, Aux_Met_window, FLUX_Met_window, point_dist, output_csv_path, emissivity, point_data_path = TCMainFunctions.initialize_data_from_config_point(config_path)
+        Aux_Met_Data, FLUX_Met_Data, Aux_Met_window, FLUX_Met_window, point_dist, output_csv_path, emissivity, point_data_path, elevation = TCMainFunctions.initialize_data_from_config_point(config_path)
         
         # Process point data
         TCMainFunctions.setup_gui_and_start_point(
@@ -57,7 +58,8 @@ def process_data(config_path: str):
             Aux_Met_window,             # Time window for auxiliary data matching
             FLUX_Met_window,            # Time window for FLUX data matching (optional)
             output_csv_path,            # Path to store final processed CSV file
-            emissivity                  # Emissivity value
+            emissivity,                 # Emissivity value
+            elevation
         )
     else:
         print(f"Unknown data type: {data_type}")

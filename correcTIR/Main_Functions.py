@@ -273,7 +273,7 @@ def get_image_shape(image_path):
     
     if image is None:
         raise ValueError(f"Failed to load image from {image_path}. Ensure the file is valid and in a supported format.")
-    
+   
     return image.shape[:2]  # Return only height and width
 
 def read_and_convert_image(image_path):

@@ -728,7 +728,6 @@ def process_and_export_corrected_roi_means(image_path, roi_masks, average_distan
     Process and export corrected ROI percentiles and mean for a TIFF image while retaining uncorrected values.
 
     Parameters:
-    Aux_Met_Data, FLUX_Met_Data, aux_met_window, flux_met_window, emissivity_target, elevation, sky_percent, emissivity_vf2, win_transmittance
     image_path (str): Path to the TIFF image.
     roi_masks (dict): Dictionary of ROI masks.
     average_distances (dict): Dictionary of average distances for each ROI.
@@ -737,10 +736,9 @@ def process_and_export_corrected_roi_means(image_path, roi_masks, average_distan
     aux_met_window (int): Time window in minutes for searching auxiliary meteorological data.
     flux_met_window (int): Time window in minutes for searching FLUX meteorological data.
     emissivity_target (float): Emissivity value of target object.
-    elevation (float): Elevation value.
+    elevation (float): Site elevation value.
     sky_percent (int): Percent of target's view factor that is composed of sky.
     emissivity_vf2 (float): Emissivity of the dominant surrounding object other than sky.
-    elevation (float): Site elevation.
     win_transmittance (float): The transmittance value of the enclosure window.
 
     Returns:
@@ -826,6 +824,9 @@ def process_images_in_folders(Aux_Met_Data, aux_met_window, FLUX_Met_Data, flux_
     average_distances (dict): A dictionary of average distances for each ROI.
     base_folder (str): The base folder path where the images are located.
     output_csv_path (str): Path to the output CSV file where the results will be saved.
+    progress_bar (tk.Progressbar): GUI progress bar.
+    status_label (tk.Label): GUI status label.
+    root (tk.Tk): Tkinter main window.
 
     Returns:
     pd.DataFrame: DataFrame containing processed data.

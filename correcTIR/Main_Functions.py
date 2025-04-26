@@ -1248,7 +1248,7 @@ def process_and_export_corrected_point_data(Aux_Met_Data, aux_met_window, FLUX_M
                 data_entry['temp_value_fully_corrected'] = corrected_value
                 data_entry['temp_value_tau1'] = corrected_value_tau1
                 data_entry['temp_value_twin1'] = corrected_value_twin1
-                data_entry['temp_value_objemiss1'] = corrected_value_emiss1
+                data_entry['temp_value_emiss1'] = corrected_value_emiss1
 
                 # Append to the list
                 processed_data.append(data_entry)

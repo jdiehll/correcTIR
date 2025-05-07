@@ -127,22 +127,47 @@ class ImageDataInputs(tk.Frame):
         flux_met_window.grid(row=0, column=3)
         flux_met_window.bind('<KeyRelease>', lambda e: check_value(self, e.widget, 1, float('inf')))
 
-        emissivity_label = ttk.Label(simulation_variable_frame, text="Object Emissivity Value (0-1)")
-        emissivity = ttk.Entry(simulation_variable_frame)
-        emissivity_label.grid(row=1, column=0, padx=10, pady=10)
-        emissivity.grid(row=1, column=1, padx=10, pady=10)
-        emissivity.bind('<KeyRelease>', lambda e: check_value(self, e.widget, 0, 1))
+        elevation_label = ttk.Label(simulation_variable_frame, text="Elevation (m)")
+        elevation = ttk.Entry(simulation_variable_frame)
+        elevation_label.grid(row=1, column=0, padx=10, pady=10)
+        elevation.grid(row=1, column=1, padx=10, pady=10)
+        elevation.bind('<KeyRelease>', lambda e: check_value(self, e.widget, 1, float('inf')))
+
+        utc_offset_label = ttk.Label(simulation_variable_frame, text="UTC Offset")
+        utc_offset = ttk.Entry(simulation_variable_frame)
+        utc_offset_label.grid(row=1, column=2, padx=10, pady=10)
+        utc_offset.grid(row=1, column=3, padx=10, pady=10)
+        utc_offset.bind('<KeyRelease>', lambda e: check_value(self, e.widget, -12, 12))
 
         data_label = ttk.Label(simulation_variable_frame, text="ROI Distance Data Type")
         data_type_combobox = ttk.Combobox(simulation_variable_frame, values=["average", "pointcloud"])
-        data_label.grid(row=1, column=2, padx=10, pady=10)
-        data_type_combobox.grid(row=1, column=3, padx=10, pady=10)
+        data_label.grid(row=2, column=0, padx=10, pady=10)
+        data_type_combobox.grid(row=2, column=1, padx=10, pady=10)
 
-        elevation_label = ttk.Label(simulation_variable_frame, text="Elevation (m)")
-        elevation = ttk.Entry(simulation_variable_frame)
-        elevation_label.grid(row=2, column=2, padx=10, pady=10)
-        elevation.grid(row=2, column=3, padx=10, pady=10)
-        elevation.bind('<KeyRelease>', lambda e: check_value(self, e.widget, 1, float('inf')))
+        emissivity_label = ttk.Label(simulation_variable_frame, text="Emissivity Target (0-1)")
+        emissivity = ttk.Entry(simulation_variable_frame)
+        emissivity_label.grid(row=3, column=0, padx=10, pady=10)
+        emissivity.grid(row=3, column=1, padx=10, pady=10)
+        emissivity.bind('<KeyRelease>', lambda e: check_value(self, e.widget, 0, 1))
+
+        emissivity_vf2_label = ttk.Label(simulation_variable_frame, text="Emissivity VF2 (0-1)")
+        emissivity_vf2 = ttk.Entry(simulation_variable_frame)
+        emissivity_vf2_label.grid(row=3, column=2, padx=10, pady=10)
+        emissivity_vf2.grid(row=3, column=3, padx=10, pady=10)
+        emissivity_vf2.bind('<KeyRelease>', lambda e: check_value(self, e.widget, 0, 1))
+
+        sky_percent_label = ttk.Label(simulation_variable_frame, text="Sky Percent (0-100)")
+        sky_percent = ttk.Entry(simulation_variable_frame)
+        sky_percent_label.grid(row=4, column=0, padx=10, pady=10)
+        sky_percent.grid(row=4, column=1, padx=10, pady=10)
+        sky_percent.bind('<KeyRelease>', lambda e: check_value(self, e.widget, 0, 100))
+
+        window_transmittance_label = ttk.Label(simulation_variable_frame, text="Window Transmittance (0-1)")
+        window_transmittance = ttk.Entry(simulation_variable_frame)
+        window_transmittance_label.grid(row=4, column=2, padx=10, pady=10)
+        window_transmittance.grid(row=4, column=3, padx=10, pady=10)
+        window_transmittance.bind('<KeyRelease>', lambda e: check_value(self, e.widget, 0, 1))
+        
 
         # Config File Details
         configuration_frame = ttk.LabelFrame(self, text="Configuration File")
@@ -186,6 +211,10 @@ class ImageDataInputs(tk.Frame):
             "config_json_file_name": config_file_name,
 
             "elevation": elevation,
+            "utc_offset": utc_offset,
+            "emissivity_vf2": emissivity_vf2,
+            "sky_percent": sky_percent,
+            "window_transmittance": window_transmittance,
         }
 
         ##### Buttons Section #####
@@ -235,7 +264,7 @@ class ImageDataInputs(tk.Frame):
                 "Aux_Met_window": float(form_data['Aux_Met_window'].get()),
                 "FLUX_Met_window": flux_met_window,
                 "output_csv_path": output_csv_path,
-                "emissivity": float(form_data['emissivity'].get()),
+                "emissivity_target": float(form_data['emissivity'].get()),
                 "aux_met_data_path": aux_met_data_path,
                 "flux_met_data_path": form_data['flux_met_data_path'].get(),
 
@@ -243,9 +272,13 @@ class ImageDataInputs(tk.Frame):
                 "roi_path": form_data['roi_path'].get(),
                 "roi_dist_path": form_data['roi_dist_path'].get(),
                 "base_folder": form_data['base_folder'].get(),
-                "data_type": form_data['data_type'].get(),
+                "img_dist_type": form_data['data_type'].get(),
 
-                "elevation": form_data['elevation'].get(), 
+                "elevation": form_data['elevation'].get(),
+                "utc_offset": form_data['utc_offset'].get(),
+                "emissivity_vf2": form_data['emissivity_vf2'].get(),
+                "sky_percent": form_data['sky_percent'].get(),
+                "window_transmittance": form_data['window_transmittance'].get(), 
             }
 
             os.makedirs(form_data['output_csv_dir'].get(), exist_ok=True)

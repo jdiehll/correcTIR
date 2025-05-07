@@ -1,3 +1,6 @@
+import sys
+import os
+
 # Load Dependencies
 import tkinter as tk
 from tkinter import ttk
@@ -5,8 +8,10 @@ from tkinter import font as tkfont
 from tkinter import filedialog
 
 
-from src.backend.process_data import process_data, open_overlay
+from src.backend.process_data import open_overlay
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../correcTIR/")))
 from src.file_functions import get_path
+from Main_Functions import process_data
 
 class ProcessImageData(ttk.Frame):
     def __init__(self, parent, window):

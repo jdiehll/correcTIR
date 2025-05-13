@@ -1,12 +1,20 @@
 # Load Dependencies
+import sys
+import os
+
 import tkinter as tk
 from tkinter import ttk
 from tkinter import font as tkfont 
 
 from tkinter import messagebox
 
-from src.backend.process_data import process_data
+# from src.backend.process_data import process_data
 from src.file_functions import get_path
+
+# add the path for Main_Functions
+from src.backend.process_data import open_overlay
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../correcTIR/")))
+from Main_Functions import process_data
 
 class PointData(tk.Frame):
     def __init__(self, parent, window):

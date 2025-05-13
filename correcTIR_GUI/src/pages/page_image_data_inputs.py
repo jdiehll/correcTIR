@@ -261,8 +261,8 @@ class ImageDataInputs(tk.Frame):
             config_data = {
                 "data": "image",
 
-                "Aux_Met_window": float(form_data['Aux_Met_window'].get()),
-                "FLUX_Met_window": flux_met_window,
+                "aux_met_window": float(form_data['Aux_Met_window'].get()),
+                "flux_met_window": float(flux_met_window),
                 "output_csv_path": output_csv_path,
                 "emissivity_target": float(form_data['emissivity'].get()),
                 "aux_met_data_path": aux_met_data_path,
@@ -274,11 +274,11 @@ class ImageDataInputs(tk.Frame):
                 "base_folder": form_data['base_folder'].get(),
                 "img_dist_type": form_data['data_type'].get(),
 
-                "elevation": form_data['elevation'].get(),
-                "utc_offset": form_data['utc_offset'].get(),
-                "emissivity_vf2": form_data['emissivity_vf2'].get(),
-                "sky_percent": form_data['sky_percent'].get(),
-                "window_transmittance": form_data['window_transmittance'].get(), 
+                "elevation": float(form_data['elevation'].get()),
+                "utc_offset": float(form_data['utc_offset'].get()),
+                "emissivity_vf2": float(form_data['emissivity_vf2'].get()),
+                "sky_percent": float(form_data['sky_percent'].get()),
+                "win_transmittance": float(form_data['window_transmittance'].get()), 
             }
 
             os.makedirs(form_data['output_csv_dir'].get(), exist_ok=True)
@@ -291,4 +291,11 @@ class ImageDataInputs(tk.Frame):
 
         except Exception as exp:
             messagebox.showerror(title="Error in Submission!", message='Please make sure all fields are filled out with the correct data.')
-            # print(f'error message: {exp}')
+            print(f'error message: {exp}')
+
+    def convert_number_for_json(num):
+        if num % 1 == 0:
+            return int(num)
+        else:
+            return float(num)
+

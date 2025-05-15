@@ -1,0 +1,19 @@
+{
+    "data": "image",
+    "aux_met_window": 10.0,
+    "flux_met_window": 10.0,
+    "output_csv_path": "./test_outputimage.csv",
+    "emissivity_target": 0.98,
+    "aux_met_data_path": "./TestData/Image/tair_rh_vf2_twin_2017.csv",
+    "flux_met_data_path": "./TestData/Image/LW_2017.csv",
+    "first_image_path": "./TestData/Image/2017/06/niwot_20170621_060000.tiff",
+    "roi_path": "./TestData/Image/Niwot_rois.csv",
+    "roi_dist_path": "./TestData/Image/niwotAvgDistances.csv",
+    "base_folder": "./TestData/Image",
+    "img_dist_type": "average",
+    "elevation": 3000.0,
+    "utc_offset": -6.0,
+    "emissivity_vf2": 1.0,
+    "sky_percent": 100.0,
+    "win_transmittance": 0.98
+}

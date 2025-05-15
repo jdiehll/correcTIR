@@ -284,7 +284,7 @@ def initialize_data_from_config_image(config_path):
     # Initialize ROI masks and distances
     roi_masks, average_distances = initialize_roi_masks_and_distances(
         config['roi_path'], config['roi_dist_path'], config['first_image_path'], config['img_dist_type'])
-    
+
     return (
         Aux_Met_Data,
         config.get('aux_met_window'),
@@ -384,19 +384,19 @@ def create_roi_masks(csv_path, image_shape, image_path):
             rois[label] = mask.astype(bool)  # Convert to boolean mask
     return rois
 
-def calculate_average_distances(distance_csv, roi_masks=None, data_type='pointcloud'):
+def calculate_average_distances(distance_csv, roi_masks=None, data_type='pixeldistance'):
     """
     Calculate or read the average distance for each ROI.
 
     Parameters:
     distance_csv (str): Path to the CSV file containing distances.
-    roi_masks (dict, optional): A dictionary containing masks for each ROI (used if data_type is 'pointcloud').
-    data_type (str): Type of data in the CSV file ('pointcloud' or 'average').
+    roi_masks (dict, optional): A dictionary containing masks for each ROI (used if data_type is 'pixeldistance').
+    data_type (str): Type of data in the CSV file ('pixeldistance' or 'average').
 
     Returns:
     dict: A dictionary with ROI labels as keys and their average distances as values.
     """
-    if data_type == 'pointcloud':
+    if data_type == 'pixeldistance':
         # Load the pixel distances from the CSV file
         pixel_distances = np.loadtxt(distance_csv, delimiter=',', encoding='utf-8-sig')
         
@@ -419,11 +419,11 @@ def calculate_average_distances(distance_csv, roi_masks=None, data_type='pointcl
         average_distances = df.set_index('label')['average_distance'].to_dict()
 
     else:
-        raise ValueError("data_type must be either 'pointcloud' or 'average'.")
+        raise ValueError("data_type must be either 'pixeldistance' or 'average'.")
 
     return average_distances
 
-def initialize_roi_masks_and_distances(roi_csv_path, distance_csv_path, image_path, data_type='pointcloud'):
+def initialize_roi_masks_and_distances(roi_csv_path, distance_csv_path, image_path, data_type='pixeldistance'):
     """
     Initialize ROI masks and calculate or read the average distances.
 
@@ -431,7 +431,7 @@ def initialize_roi_masks_and_distances(roi_csv_path, distance_csv_path, image_pa
     roi_csv_path (str): Path to the CSV file containing ROI information.
     distance_csv_path (str): Path to the CSV file containing distances.
     image_path (str): Path to the image file.
-    data_type (str): Type of data in the distance CSV file ('pointcloud' or 'average').
+    data_type (str): Type of data in the distance CSV file ('pixeldistance' or 'average').
 
     Returns:
     tuple: A tuple containing ROI masks and average distances.
@@ -653,7 +653,7 @@ def correct_integer_image(integerImg, file_data, emissivity_target, sky_percent,
 
     integerImgSB = radiance_from_temperature(integerImg)
     integerAtmSB = radiance_from_temperature(airT)
-
+    
     # Handle reflected radiation
     if sky_percent != 100:
         vf2 = file_data['VF_2']
@@ -758,6 +758,7 @@ def process_and_export_corrected_roi_means(image_path, roi_masks, average_distan
             required_fields.append('T_win')
 
         missing_fields = [field for field in required_fields if file_data.get(field) is None]
+
         if missing_fields:
             print(f"Skipping {image_path} due to missing fields: {', '.join(missing_fields)}")
             return None
@@ -873,7 +874,11 @@ def process_images_in_folders(Aux_Met_Data, aux_met_window, FLUX_Met_Data, flux_
     result_df = pd.DataFrame(file_data_list)
 
     # Sort the DataFrame by 'Timestamp' in ascending order
-    result_df = result_df.sort_values(by='Timestamp')
+    if not result_df.empty and 'Timestamp' in result_df.columns:
+        result_df = result_df.sort_values(by='Timestamp')
+    else:
+        print("Warning: result_df is empty or missing 'Timestamp' column. Skipping sort.")
+
 
     # Export the DataFrame to a CSV file
     result_df.to_csv(output_csv_path, index=False)

@@ -140,7 +140,7 @@ class ImageDataInputs(tk.Frame):
         utc_offset.bind('<KeyRelease>', lambda e: check_value(self, e.widget, -12, 12))
 
         data_label = ttk.Label(simulation_variable_frame, text="ROI Distance Data Type")
-        data_type_combobox = ttk.Combobox(simulation_variable_frame, values=["average", "pointcloud"])
+        data_type_combobox = ttk.Combobox(simulation_variable_frame, values=["average", "pixeldistance"])
         data_label.grid(row=2, column=0, padx=10, pady=10)
         data_type_combobox.grid(row=2, column=1, padx=10, pady=10)
 

@@ -460,50 +460,86 @@ I'm not exactly sure what this should look like. A video of me moving through th
 
 **Draw & Label ROI(s)**
 
-Two functions allow users to interactively draw and label polygonal regions of interest (ROIs) on a thermal image and save them to a .csv file.
+The draw_and_label_poly_rois() function allows users to interactively draw and label polygonal Regions of Interest (ROIs) on a thermal image and optionally save them to a .csv file. This tool is useful for defining spatial zones for later analysis or correction.
 
+Function: draw_and_label_poly_rois(image_path, output_csv_path=None)
 Input Parameters:
-- image_path (str): Path to thermal image on which to draw the ROIs.
-- rois (list): A list of dictionaries. Each dictionary contains the label and points of an ROI. Expected format for each dictionary: {'label': 'some_label', 'points': [(x1, y1), (x2, y2), ...]} **created by draw_and_label_poly_rois() function**
-- filename (str, optional): Name of the .csv file to save the data to. Defaults to "rois.csv".
+- image_path (str): Path to the thermal .tiff image on which to draw ROIs.
+- output_csv_path (str, optional): Full path (including filename) where the labeled ROIs will be saved as a .csv file. If not provided, ROIs will not be saved automatically.
+_**Note: After drawing each polygon, a pop-up prompt will appear asking you to enter a label for the ROI. You must name the ROI before you can begin drawing the next one.**_
+
+Function: save_rois_to_csv(rois, filename="rois.csv")
+If you choose not to save during ROI drawing, you can use this function afterward to save the ROI list to a .csv.
+Input Parameters:
+- rois (list): A list of labeled polygon ROI dictionaries as returned by draw_and_label_poly_rois().
+- filename (str, optional): File path where the .csv should be saved. Defaults to "rois.csv" in the current directory.
 
 ```
-from correcTIR import draw_and_label_poly_rois, save_rois_to_csv
+import sys
+sys.path.append('path/to/package/correcTIR')
 
-rois = draw_and_label_poly_rois('path/to/tiff/thermal/image/to/draw/ROIs.tiff')
-save_rois_to_csv (rois, 'path/to/save/rois.csv')
+from correcTIR.ROI_Viz_Functions import draw_and_label_poly_rois, save_rois_to_csv
 
+# Define input and output paths
+image_path = 'path/to/tiff/thermal/image.tiff'
+output_path = 'path/to/save/rois.csv'
+
+# Launch interactive tool to draw ROIs and save to CSV
+rois = draw_and_label_poly_rois(image_path, output_csv_path=output_path)
+
+# Alternatively, save later using:
+# save_rois_to_csv(rois, filename=output_path)
 ```
 
 **Checking ROI overlay is correct and option to save image with ROIs**
 
-Display an image with ROIs and labels overlaid, as specified in a .csv file, and optionally save the overlay image to a specified path.
+The overlay_rois_from_csv() function allows you to visualize previously labeled ROIs by drawing them on top of a thermal image. You can optionally save the result as a new image.
 
+Function:
+overlay_rois_from_csv(image_path, csv_path, output_image_path=None)
 Input Parameters:
-- image_path (str): Path to the image on which to overlay the ROIs.
-- csv_path (str): Path to the CSV file containing ROI data. (Expected .csv format like ROI file expalined above)
-- output_image_path (str, optional): Path to save the overlay image. If None, the image is not saved.
+- image_path (str): Path to the thermal .tiff image on which to overlay ROIs.
+- csv_path (str): Path to the .csv file containing ROI labels and coordinates.output_image_path (str, optional): Path to save the image with overlaid ROIs. If not specified, the image is displayed in a pop-up window with instructions.
 
 ```
-from correcTIR import overlay_rois_from_csv
+import sys
+sys.path.append('path/to/package/correcTIR')
 
-overlay_rois_from_csv('path/to/tiff/thermal/image.tiff', 'path/to/csv/of/ROIs.csv','path/to/save/thermal/image.png')
+from correcTIR.ROI_Viz_Functions import overlay_rois_from_csv
 
+# Define paths
+image_path = 'path/to/tiff/thermal/image.tiff'
+roi_path = 'path/to/rois.csv'
+
+# Optional: define path to save image with ROIs
+save_path = 'path/to/save/overlay_image_with_rois.jpg'
+
+# Overlay and optionally save the image
+overlay_rois_from_csv(image_path, roi_path, output_image_path=save_path)
 ```
+_Note: If output_image_path is not provided, a pop-up window will display the image. Press 'x' to close the window when you're done reviewing._
 
 **Saving thermal image without ROIs**
 
-Save a .png image with a specified colormap, temperature color bar scale, and normalization.
+The save_thermal_image() function generates a visually enhanced image from a raw thermal .tiff by applying a colormap and including a temperature colorbar. This is useful for creating publication-quality figures or verifying temperature gradients visually.
 
+Function:
+save_thermal_image(tiff_path, save_path, colormap='inferno')
 Input Parameters:
-- tiff_path (str): Path to the input .tiff image.
-- save_path (str): Path to save the output image.
-- colormap (str): The colormap to use. Default is 'inferno'.
+- tiff_path (str): Path to the input thermal .tiff image.
+- save_path (str): Path to save the output .png image that includes both the color-mapped thermal image and an adjacent temperature colorbar.
+- colormap (str, optional): The colormap to apply (default: 'inferno'). Any valid matplotlib colormap name can be used (e.g., 'plasma', 'viridis', 'jet', etc.).
+
 ```
-from correcTIR import save_thermal_image
+import sys
+sys.path.append('path/to/package/correcTIR')
 
-save_thermal_image('path/to/tiff/thermal/image.tiff','path/to/save/thermal/image.png')
+from correcTIR.ROI_Viz_Functions import save_thermal_image
 
+tiff_path = 'path/to/raw/thermal_image.tiff'
+save_path = 'path/to/output_colormapped_image.png'
+
+save_thermal_image(tiff_path, save_path, colormap='inferno')
 ```
 
 **.seq files to .tiff files**

@@ -32,7 +32,7 @@
 
 ## Overview
 
-correcTIR enhances the consistency and reliability of thermal measurements by standardizing the thermal data post-processing workflow. The GUI is designed to help new users swiftly process temperature data, while the Python package provides comprehensive customization options for more experienced users. correcTIR is capable of handling thermal data both as images (stored in .tiff format) and as point measurements (stored in .csv format with each entry as a row), with temperature values in degrees Celsius.
+correcTIR enhances the consistency and reliability of thermal measurements by standardizing the near-surface thermal data post-processing workflow. The GUI is designed to help new users swiftly process temperature data, while the Python package provides comprehensive customization options for more experienced users. correcTIR is capable of handling thermal data both as images (stored in .tiff format) and as point measurements (stored in .csv format with each entry as a row), with temperature values in degrees Celsius.
 
 For detailed file formatting and setup instructions, see the [Set-Up](#set-up) section below.  
 To learn more about the overall pipeline workflow, refer to [Pipeline Workflow](PipelineWorkflow.md).  
@@ -43,6 +43,8 @@ The development of correcTIR is grounded in rigorous thermal theory, aiming to a
 >Placeholder for my paper
 
 >Aubrecht, D. M., Helliker, B. R., Goulden, M. L., Roberts, D. A., Still, C. J., & Richardson, A. D. (2016). Continuous, long-term, high-frequency thermal imaging of vegetation: Uncertainties and recommended best practices. Agricultural and Forest Meteorology, 228–229, 315–326. https://doi.org/10.1016/j.agrformet.2016.07.017
+
+>Johnston, M. R., Andreu, A., Verfaillie, J., Baldocchi, D., González-Dugo, M. P., & Moorcroft, P. R. (2021). Measuring surface temperatures in a woodland savanna: Opportunities and challenges of thermal imaging in an open-canopy ecosystem. Agricultural and Forest Meteorology, 310, 108484. https://doi.org/10.1016/j.agrformet.2021.108484
 
 
 ## Set-Up
@@ -55,7 +57,7 @@ For image-based processing, you will need:
 
 ✅ [Auxiliary data](#auxiliary-data-files) (1 or 2 files, depending on measurement interval)
 
-✅ [Distance data](#distance-data-file) (either a point cloud or an average distance file)
+✅ [Distance data](#distance-data-file) (either a pixel distance or an average distance file)
 
 ✅ [Region of Interest (ROI) file](#region-of-interest-roi-file)
 
@@ -115,11 +117,11 @@ temp_value: Temperature measurements in degrees Celsius.
 
 Processing thermal data requires additional environmental data, ideally collected at the same time interval as the thermal measurements. To align these datasets, you can specify a search window (in minutes), which defines how far forward in time the system will look to find the closest available auxiliary data point that matches each thermal data timestamp. If no auxiliary data point is found within the specified search window, the corresponding thermal measurement will not be processed. This ensures that only thermal data with valid environmental context are included in the analysis. See the [Example Use](#example-use) section for details.
 
-| TIMESTAMP_END     | T_air    | RH      | LW_IN   |
-|-------------------|----------|---------|---------|
-| 8/30/17 14:35     | 14.33781 | 32.02635| 256.20  |
-| 8/30/17 14:40     | 14.43806 | 31.93127| 255.05  |
-| ...               | ...      | ...     | ...     |
+| TIMESTAMP_END     | T_air    | RH      | LW_IN   | VF_2    | T_win   |
+|-------------------|----------|---------|---------|---------|---------|
+| 8/30/17 14:35     | 14.33781 | 32.02635| 256.20  | 14.33781|14.33781|
+| 8/30/17 14:40     | 14.43806 | 31.93127| 255.05  |14.43806 |14.43806 |
+| ...               | ...      | ...     | ...     | ...     | ...     |
 
 **Column Descriptions:**
 
@@ -133,11 +135,16 @@ RH: Relative humidity measurements in float percent (%).
 
 LW_IN: Incoming longwave radiation measurements in W/m².
 
+VF_2: Surrounding temperature measurements in degrees Celsius. _(If air temperature is used as a proxy, duplicate the ‘T_air’ column under the ‘VF_2’ header for processing.)_
+
+T_win: Enclosure window temperature measurements in degrees Celsius. _(If air temperature is used as a proxy, duplicate the ‘T_air’ column under the ‘T_win’ header for processing.)_
+
+
 _Note: The software supports reading multiple auxiliary files when variables are recorded at different time intervals. For example:_
 
 _* File 1 - Incoming longwave radiation averaged over 30-minute intervals from a flux tower._
 
-_* File 2 - Air temperature and relative humidity recorded at 5-minute intervals._
+_* File 2 - Air temperature, relative humidity, view factor 2, and window temperature recorded at 5-minute intervals._
 
 _To accommodate such cases, you can provide the software with two separate auxiliary files. You can find blank templates in the Template folder._
 
@@ -147,7 +154,7 @@ _This file is **not** required if you're processing point-based measurements._
 
 For image-based processing, the distance between the temperature measurement instrument and the region(s) of interest must be specified. You can provide this information using one of two methods:
 
-* Point Cloud Projection: For more precise distance corrections, you can supply a point cloud (.csv) containing the distance **(in meters)** of each pixel from the camera within its field of view (FOV).
+* Point Cloud Projection: For more precise distance corrections, you can supply a point distance (.csv) containing the distance **(in meters)** of each pixel from the camera within its field of view (FOV). For guidance on how to make this distance map using structure from motion, see Aubrecht et al. (2016).
 
 Example: If your thermal camera has a resolution of 480 × 640 pixels, your point cloud .csv should contain 480 rows and 640 columns, with each cell representing the distance (in meters) from the camera to that pixel. Example files can be found in the "Test Data" folder. 
 
@@ -194,69 +201,37 @@ Now that your input files are in the correct format, you are ready to run the pr
     <img src="./Figures/TIRPostWorkflow.jpg" style="max-width: 80%; max-height: 600px; width: auto; height: auto; display: block; margin: auto;" />
 </figure>
 
-The GUI guides users through all steps and functions automatically, ensuring a seamless workflow.
+Users must specify all required inputs in a JSON configuration file, which guides the pipeline and serves as a record of the applied parameters. This can be done in two ways:
+•	Python Package: Requires manual creation and editing of the JSON file with precise formatting.
+•	GUI: Provides a guided interface for creating the JSON configuration file correctly.
 
-For users running the Python package, some additional manual steps are required. Specifically, they must independently execute the overlay ROI and draw ROI functions before running the pipeline. These steps are detailed in the [Additional Features](#additional-features) section.
-
-Whether you're using the Python package or the GUI to run the full pipeline and process your thermal data, you will need to create a .json configuration file.
-
-This file serves two key purposes:
-
-1. It is executed by the package to process your data.
-2. It provides a record of the processing steps you've applied.
-
-Below, we demonstrate what the "Set Inputs" stage of the workflow looks like across both platforms (Python package and GUI) and processing scenarios (images or points). Using the provided "Test Data", you should be able to replicate these steps, see the [Example Use](#example-use) section for details.
-
-### Images
-
-The following table lists and describes the required inputs for processing image data:
-| Input                 | Description                                                                                  |
-|-----------------------| ---------------------------------------------------------------------------------------------|
-| `data`                  | image                                                                                        |
-| `aux_met_data_path`     | File path to .csv file containing auxillary data                      |
-| `aux_met_window`        | Search window for auxiliary data (integer, in minutes). This window determines how far **forward** in time to search for matching auxiliary data relative to the thermal data timestamp.                      |
-| `flux_met_data_path`    | File path to .csv file containing flux data (**optional**, if at different interval)        |
-| `flux_met_window`       | Search window for flux data (integer, in minutes, **optional**). This window determines how far **forward** in time to search for matching auxiliary data relative to the thermal data timestamp.      |
-| `emissivity`            | Target emissivity value (float)           |
-| `elevation`            | Site elevation for water density correction (float)           |
-| `roi_path`              | File path to the .csv file containing ROI (Region of Interest) data                 |
-| `roi_dist_path`         | File path to the .csv file containing ROI distance data             |
-| `data_type`             | ROI distance data type (**point cloud** or **average**)           |
-| `first_image_path`      | File path to a .tiff image used to set configuration **(doesn't have to be first image)**   |
-| `base_folder`           | Path to base image folder |
-| `output_csv_path`       | File path where the output .csv will be stored **(automatically created)**           |
+The table below outlines each input parameter, including its description and whether it applies to image or point processing. Properly configured example files are available in the "Test Data" folder. See the [Example Use](#example-use) section to replicate the setup.
 
 _Note: The order of the inputs does not impact processing as long as the required input fields are present and correctly labeled. No additional parameters should be present._
-
-**Python Package:** You must manually enter these inputs into a .json configuration file. The file must be named "config.json" for the package to work with the entire processing pipeline.
-
-**GUI:** A built-in guide assists in creating the .json configuration file.
-
-Once the .json file is created, you're ready to process your image data!
-
-### Point
-
-The following table lists and describes the required inputs for processing point data:
-| Input                 | Description                                                            |
-|-----------------------| -----------------------------------------------------------------------|
-| `data`                  | point                                                                  |
-| `aux_met_data_path`     | File path to .csv file containing auxillary data                              |
-| `aux_met_window`        | Search window for auxiliary data (integer, in minutes). This window determines how far **forward** in time to search for matching auxiliary data relative to the thermal data timestamp.                    |
-| `flux_met_data_path`    | File path to .csv file containing flux data (**optional**, if at different interval) |
-| `flux_met_window`       | Search window for flux data (integer, in minutes, **optional**). This window determines how far **forward** in time to search for matching auxiliary data relative to the thermal data timestamp.              |
-| `emissivity`            | Target emissivity value (float)                          |
-| `elevation`            | Site elevation for water density correction (float)           |
-| `point_data_path`       | File path to the .csv file containing point data                                      |
-| `point_dist`           | Distance from the instrument to the target (float, in **meters**)                |
-| `output_csv_path`       | File path where the output .csv will be stored **(automatically created)**                           |
-
-_Note: The order of the inputs does not impact processing as long as the required input fields are present and correctly labeled. No additional parameters should be present._
-
-**Python Package:** You must manually enter these inputs into a .json configuration file. The file must be named "config.json" for the package to work with the entire processing pipeline.
-
-**GUI:** A built-in guide assists in creating the .json configuration file.
 
 Once the .json file is created, you're ready to process your point data!
+
+| Parameter            | Description                                                                                                                                                         | Format                     | Used for     |
+|----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------|--------------|
+| data                 | Specifies the type of data being processed (image or point).                                                                                                       | "image" / "point"          | Image, Point |
+| aux_met_data_path    | Path to .csv with auxiliary meteorological data (air temp, RH, LWd, etc.).                                                                                         | string (file path)         | Image, Point |
+| aux_met_window       | Search window in minutes to match auxiliary data with thermal measurement.                                                                                         | integer (minutes)          | Image, Point |
+| flux_met_data_path   | Optional path to .csv with flux data (e.g., LWd). Allows multiple files.                                                                                           | string (file path)         | Image, Point |
+| flux_met_window      | Search window for flux data matching, optional.                                                                                                                    | integer (minutes)          | Image, Point |
+| sky_percent          | Percentage of view factor exposed to sky (0–100).                                                                                                                  | integer (0–100)            | Image, Point |
+| emissivity_vf2       | Emissivity of non-sky surroundings (e.g., vegetation).                                                                                                             | float (0–1)                | Image, Point |
+| UTC_offset           | Timezone offset from UTC, in hours (e.g., -7.0 for MST).                                                                                                            | float                      | Image, Point |
+| emissivity_target    | Emissivity of the target object.                                                                                                                                   | float (0–1)                | Image, Point |
+| elevation            | Site elevation used for water vapor density correction.                                                                                                            | float (meters)             | Image, Point |
+| win_transmittance    | Transmittance of enclosure window. Set to 1 if no enclosure is used.                                                                                               | float (0–1)                | Image, Point |
+| roi_path             | Path to .csv with ROI masks for image-based processing.                                                                                                            | string (file path)         | Image        |
+| roi_dist_path        | Path to .csv with ROI distance data (average or point cloud).                                                                                                      | string (file path)         | Image        |
+| img_dist_type        | Specifies ROI distance type ("point cloud" or "average").                                                                                                          | "point cloud" / "average"  | Image        |
+| first_image_path     | Path to representative .tiff image for extracting image shape.                                                                                                     | string (file path)         | Image        |
+| base_folder          | Path to base image folder containing all TIR data.                                                                                                                 | string (directory path)    | Image        |
+| point_data_path      | Path to .csv containing raw point-based thermal data.                                                                                                              | string (file path)         | Point        |
+| point_dist           | Fixed distance from sensor to target for point data.                                                                                                               | float (meters)             | Point        |
+| output_csv_path      | File path for storing the output .csv (auto-created).                                                                                                              | string (file path)         | Image, Point |
 
 ## Python Package
 

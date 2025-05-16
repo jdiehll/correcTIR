@@ -317,6 +317,9 @@ To do this, simply import and run the desired function in your Python script or 
 
 Example: Converting Radiance to Temperature
 ```
+import sys
+sys.path.append('/path/to/correcTIR_parent_folder')
+
 from correcTIR.Main_Functions import radiance_to_temp
 
 radiance_to_temp(radiance)
@@ -324,11 +327,14 @@ radiance_to_temp(radiance)
 
 Example: Calculating Atmospheric Transmittance
 ```
+import sys
+sys.path.append('/path/to/correcTIR_parent_folder')
+
 from correcTIR.Main_Functions import atm_trans
 
 atm_trans (dist, rho_v)
 ```
-_Note: Replace the arguments with your own data or variables as needed._
+_Note: Replace the arguments with your data or variables as needed._
 
 For a full list of available functions and their required arguments, refer to the [Function Reference](Function_Reference.md).
 

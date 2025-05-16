@@ -218,8 +218,8 @@ Once the .json file is created, you're ready to process your point data!
 | aux_met_window       | Search window in minutes to match auxiliary data with thermal measurement.                                                                                         | integer (minutes)          | Image, Point |
 | flux_met_data_path   | Optional path to .csv with flux data (e.g., LWd). Allows multiple files.                                                                                           | string (file path)         | Image, Point |
 | flux_met_window      | Search window for flux data matching, optional.                                                                                                                    | integer (minutes)          | Image, Point |
-| sky_percent          | Percentage of view factor exposed to sky (0–100).                                                                                                                  | integer (0–100)            | Image, Point |
-| emissivity_vf2       | Emissivity of non-sky surroundings (e.g., vegetation).                                                                                                             | float (0–1)                | Image, Point |
+| sky_percent          | Percentage of view factor exposed to sky (0–100). Set to 100 if target is only exposed to sky.                                                                                                                  | integer (0–100)            | Image, Point |
+| emissivity_vf2       | Emissivity of non-sky surroundings (e.g., structures). Set to 1 if target is only exposed to sky.                                                                                                             | float (0–1)                | Image, Point |
 | UTC_offset           | Timezone offset from UTC, in hours (e.g., -7.0 for MST).                                                                                                            | float                      | Image, Point |
 | emissivity_target    | Emissivity of the target object.                                                                                                                                   | float (0–1)                | Image, Point |
 | elevation            | Site elevation used for water vapor density correction.                                                                                                            | float (meters)             | Image, Point |
@@ -244,7 +244,7 @@ For users who want to run individual functions or the full pipeline in Python, t
 To download the latest version of the repository, open a terminal or command prompt and run:
 
 ```
-git clone [https://github.com/Thermal-Cam-Network/TIRPost.git](https://github.com/Thermal-Cam-Network/TIRPost.git)
+git clone [[https://github.com/Thermal-Cam-Network/TIRPost.git](https://github.com/Thermal-Cam-Network/TIRPost.git)](https://github.com/jdiehll/correcTIR.git)
 ```
 If you don’t have Git installed, you can download the repository manually by clicking Code → Download ZIP on GitHub and extracting the contents.
 
@@ -280,30 +280,33 @@ To successfully run the correcTIR package, follow these steps:
 
 1. Prepare Your Files
 * Ensure all required files are in the correct format, naming convention, and folder structure.
-* Update and name your configuration file as "config.json" with your specific input details.
-* Be sure all required correcTIR dependencies are installed (see [Requirements](#requirements) section).
-_ Again we recommend working in a virtual environment._
+* Create a JSON configuration file named config.json, customized with your input settings. Save this file in the root correcTIR folder (the same folder that contains main.py).
+* Make sure all correcTIR dependencies are installed (see [Requirements](#requirements) section).
+_Tip: We recommend working within a virtual environment to avoid package conflicts._
 
 2. Navigate to the Project Folder
-Open a terminal and move into the project directory:
+Open your terminal and move into the project directory:
 ```
 cd correcTIR
 ```
 
 3. Run the Processing Pipeline
-Execute the package:
+Execute the package using:
 ```
 python main.py
 ```
-_Note: It may be necessary to type python3 and not just python._
+_Note: On some systems, you may need to use python3 instead of python._
 
-This will begin processing your data using the inputs defined in "config.json".
+This will initiate data processing using the parameters defined in your config.json.
 
 4. Track Progress
-A pop-up window will open, displaying real-time progress by tracking the number of processed images out of the total. This allows you to monitor the status of the processing pipeline.
+A pop-up window will appear showing real-time progress, including how many images have been processed out of the total. This helps you monitor the pipeline’s execution.
 
-5. Completion
-Once processing is complete and the progress bar reaches 100%, you can close the pop-up window. Your processed data will now be available for review.
+5. Errors
+If any errors occur, they will be printed to the terminal with detailed messages when available. Use this output to troubleshoot issues with your configuration or input data.
+
+6. Completion
+When processing finishes and the progress bar reaches 100%, you can close the pop-up window. Your processed output files will now be available for review in the designated output directory.
 
 ### Running Individual Functions
 
@@ -315,15 +318,17 @@ Example: Converting Radiance to Temperature
 ```
 from correcTIR.Main_Functions import radiance_to_temp
 
-radiance_to_temp()
+radiance_to_temp(radiance)
 ```
 
-Example: Saving Thermal Image
+Example: Calculating Atmospheric Transmittance
 ```
-from correcTIR.ROI_Viz_Functions import save_thermal_image
+from correcTIR.Main_Functions import atm_trans
 
-save_thermal_image()
+atm_trans (dist, rho_v)
 ```
+_Note: Replace the arguments with your own data or variables as needed._
+
 For a full list of available functions and their required arguments, refer to the [Function Reference](Function_Reference.md).
 
 ## GUI
@@ -379,30 +384,35 @@ ttkbootstrap==1.10.1
 
 ### Output File
 
-You may be wondering what your output looks like. Your output file is a .csv with the follow variables:
+Processed results are saved to a '.csv' file (output_csv_path), with each row representing a successfully matched and processed entry. Columns include associated meteorological data and thermal readings from raw to fully corrected temperatures.
 
 ### Images
 
-| **Column Header**       | **Description**  |
-|-------------------------|---------------------------------------------------------------------|
-| `filepath`             | The complete file path where the original TIFF image is stored.   |
-| `filename_short`       | A shortened or more convenient representation of the image file name. |
-| `Timestamp`           | The date and time when the data were recorded, formatted as **MM/DD/YY HH:MM**. |
-| `T_air`               | Air temperature at the time of image capture, measured in **°C**. |
-| `RH`                 | Relative humidity at the time of data capture, expressed as a **percentage**. |
-| `sky_temp`           | Temperature of the sky, inferred from the image, measured in **°C**. |
-| `LW_IN`              | Longwave incoming radiation measured in **W/m²**. |
-| `rho_v`              | Water vapor density in the air, measured in **g/m³**. |
-| `tau`                | Atmospheric transmittance. |
+| Column Header   | Description                                                                                 |
+|-----------------|---------------------------------------------------------------------------------------------|
+| filepath        | The complete file path where the original TIFF image is stored.                            |
+| filename_short  | A shortened or more convenient representation of the image file name.                      |
+| Timestamp       | The date and time when the data were recorded, formatted as MM/DD/YY HH:MM.                |
+| T_air           | Air temperature at the time of image capture, measured in °C.                              |
+| RH              | Relative humidity at the time of data capture, expressed as a percentage.                  |
+| sky_temp        | Temperature of the sky, from LW_IN, measured in °C.                                        |
+| VF_2            | Temperature of view factor 2, measured in °C.                                              |
+| T_win           | Temperature of enclosure window, measured in °C.                                           |
+| LW_IN           | Longwave incoming radiation measured in W/m².                                              |
+| rho_v           | Water vapor density in the air, measured in g/m³.                                          |
+| tau             | Atmospheric transmittance.                                                                 |
+
 
 For each Region of Interest (ROI_X), the following values are computed as additional columns in output .csv file:
 
-| **Column Header**       | **Description**  |
-|-------------------------|-----------------|
-| `ROI_X_{stat}_uncorrected` |	Uncorrected thermal reading for {stat} (mean or percentile).   |
-| `ROI_X_{stat}_fully_corrected` |	Fully corrected thermal reading for {stat}.|
-| `ROI_X_{stat}_tau1` |	Thermal reading for {stat} with atmospheric corrections turned off. |
-| `ROI_X_{stat}_objemiss1` |	Thermal reading for {stat} with reflected radiation corrections turned off.|
+| Column Header                   | Description                                                                                   |
+|--------------------------------|-----------------------------------------------------------------------------------------------|
+| ROI_X_{stat}_uncorrected       | Uncorrected thermal reading for {stat} (mean or percentile).                                 |
+| ROI_X_{stat}_fully_corrected   | Fully corrected thermal reading for {stat}.                                                   |
+| ROI_X_{stat}_tau1              | Thermal reading for {stat} with atmospheric corrections turned off.                           |
+| ROI_X_{stat}_twin1             | Thermal reading for {stat} with enclosure window corrections turned off.                      |
+| ROI_X_{stat}_emiss1            | Thermal reading for {stat} with reflected radiation corrections turned off.                   |
+
 
 where {stat} represents one of the following statistical measures:
 
@@ -421,19 +431,20 @@ These values are repeated for all available ROIs in the dataset.
 
 ### Points
 
-| **Column Header**       | **Description**  |
-|-------------------------|---------------------------------------------------------------------|
-| `Timestamp`           | The date and time when the data were recorded, formatted as **MM/DD/YY HH:MM**. |
-| `T_air`               | Air temperature at the time of image capture, measured in **°C**. |
-| `RH`                 | Relative humidity at the time of data capture, expressed as a **percentage**. |
-| `sky_temp`           | Temperature of the sky, inferred from the image, measured in **°C**. |
-| `LW_IN`              | Longwave incoming radiation measured in **W/m²**. |
-| `rho_v`              | Water vapor density in the air, measured in **g/m³**. |
-| `tau`                | Atmospheric transmittance. |
-| `temp_value__uncorrected`  | Uncorrected thermal reading. |
-| `temp_value_corrected`    | Fully corrected thermal reading. |
-| `temp_value_tau1`    | Corrected thermal reading if atmospheric corrections are turned off. |
-| `temp_value_objemiss1`    | Corrected thermal reading if reflected radiation is turned off. |
+| Column Header               | Description                                                                                      |
+|----------------------------|--------------------------------------------------------------------------------------------------|
+| Timestamp                  | The date and time when the data were recorded, formatted as MM/DD/YY HH:MM.                      |
+| T_air                      | Air temperature at the time of image capture, measured in °C.                                    |
+| RH                         | Relative humidity at the time of data capture, expressed as a percentage.                        |
+| sky_temp                   | Temperature of the sky, inferred from the image, measured in °C.                                 |
+| LW_IN                      | Longwave incoming radiation measured in W/m².                                                    |
+| rho_v                      | Water vapor density in the air, measured in g/m³.                                                |
+| tau                        | Atmospheric transmittance.                                                                       |
+| temp_value_uncorrected     | Uncorrected thermal reading.                                                                     |
+| temp_value_fully_corrected| Fully corrected thermal reading.                                                                  |
+| temp_value_tau1            | Corrected thermal reading if atmospheric corrections are turned off.                             |
+| temp_value_twin1           | Corrected thermal reading if enclosure window corrections are turned off.                        |
+| temp_value_emiss1          | Corrected thermal reading if reflected radiation is turned off.                                  |
 
 ## Example Use
 I'm not exactly sure what this should look like. A video of me moving through the GUI?

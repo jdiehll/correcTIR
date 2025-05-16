@@ -452,7 +452,7 @@ These values are repeated for all available ROIs in the dataset.
 | temp_value_emiss1          | Corrected thermal reading if reflected radiation is turned off.                                  |
 
 ## Example Use
-I'm not exactly sure what this should look like. A video of me moving through the GUI?
+Please refer to the **"Test Data"** folder for now. Video walkthroughs are coming soon!
 
 ## Additional Features
 

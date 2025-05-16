@@ -541,22 +541,6 @@ save_path = 'path/to/output_colormapped_image.png'
 
 save_thermal_image(tiff_path, save_path, colormap='inferno')
 ```
-
-**.seq files to .tiff files**
-
-This process converts raw thermal images from .seq format into temperature-calibrated .tiff files for further analysis.
-_Need to download exiftool and have it installed on computer @ https://exiftool.org/_
-
-Assumes you have a folder for each month and running one year at a time.
-
-1.  Update SEQ_Reformatting.ipynb with Your Paths
-Open the script and update the following two directory paths:
-```
-base_dir = 'path/to/seq/image/folders'  # Path to raw .seq image folder  
-output_base_dir = 'path/to/save/tiff/images'  # Path to save .tiff output files  
-```
-2. Run the Conversion Script
-You can run SEQ_Reformatting.ipynb in any Python environment.
   
 ## Troubleshooting & FAQs
 

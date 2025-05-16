@@ -41,8 +41,6 @@ For specific function details, check the [Function Reference](Function_Reference
 
 The development of correcTIR is grounded in rigorous thermal theory, aiming to address the common challenges in thermal data accuracy and utility. For a comprehensive explanation of the theoretical foundations and expanded details on the functionalities of correcTIR, please consult:
 
->Placeholder for my paper
-
 >Aubrecht, D. M., Helliker, B. R., Goulden, M. L., Roberts, D. A., Still, C. J., & Richardson, A. D. (2016). Continuous, long-term, high-frequency thermal imaging of vegetation: Uncertainties and recommended best practices. Agricultural and Forest Meteorology, 228–229, 315–326. https://doi.org/10.1016/j.agrformet.2016.07.017
 
 >Johnston, M. R., Andreu, A., Verfaillie, J., Baldocchi, D., González-Dugo, M. P., & Moorcroft, P. R. (2021). Measuring surface temperatures in a woodland savanna: Opportunities and challenges of thermal imaging in an open-canopy ecosystem. Agricultural and Forest Meteorology, 310, 108484. https://doi.org/10.1016/j.agrformet.2021.108484

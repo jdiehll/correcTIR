@@ -12,8 +12,7 @@ Last Updated: May 16, 2025
 
 ### How to cite this package
 
->Placeholder
-
+>[![DOI](https://zenodo.org/badge/942243035.svg)](https://doi.org/10.5281/zenodo.15446494)
 
 * [Overview](#overview)
 * [Set-Up](#set-up)

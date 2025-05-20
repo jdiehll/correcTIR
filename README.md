@@ -349,22 +349,26 @@ python -m venv /path/to/new/virtual/environment
 
 To create a conda environment see the [conda documentation](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html). 
 
-Once a virtual environment is created install all of the TIR dependencies see [Requirements](#requirements) section. Run the following based on your OS in the terminal.
+Once a virtual environment is created install all of the TIR dependencies see [Requirements](#requirements) section. Run the following based on your OS in the terminal. The path to the correcTIR directory should be to the directory containing Main_Functions.py.
 
 ### Windows
 ```
-pyinstaller --windowed --onedir  .\correcTIR.py
+pyinstaller --paths='correcTIR diectory path' --windowed --onedir  .\correcTIR.py
+# For one file. The program will start slower. 
+pyinstaller --paths='correcTIR diectory path' --windowed --onedir  .\correcTIR.py
 ```
 
 ### MacOS
 ```
 pyinstaller --paths='correcTIR diectory path' -w --noupx --onedir correcTIR.py
+# For one file. The program will start slower. 
+pyinstaller --paths='correcTIR diectory path' -w --noupx --onedir --onefile correcTIR.py
 ```
 
 ### Linux
 ```bash
 pyinstaller --paths='correcTIR diectory path' --windowed --onedir correcTIR.py
-# For one file
+# For one file. The program will start slower. 
 pyinstaller --paths='correcTIR diectory path' --windowed --onedir --onefile correcTIR.py
 ```
 

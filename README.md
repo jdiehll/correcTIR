@@ -358,12 +358,14 @@ pyinstaller --windowed --onedir  .\correcTIR.py
 
 ### MacOS
 ```
-pyinstaller -w --noupx --onedir correcTIR.py
+pyinstaller --paths='correcTIR diectory path' -w --noupx --onedir correcTIR.py
 ```
 
 ### Linux
 ```bash
-pyinstaller --windowed --onedir correcTIR.py
+pyinstaller --paths='correcTIR diectory path' --windowed --onedir correcTIR.py
+# For one file
+pyinstaller --paths='correcTIR diectory path' --windowed --onedir --onefile correcTIR.py
 ```
 
 ## Requirements

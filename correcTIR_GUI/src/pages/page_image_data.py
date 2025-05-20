@@ -35,4 +35,4 @@ class ImageData(ttk.Frame):
             text="Main Page",
             command=lambda: window.show_frame("MainPage"),
         )
-        button_main_page.grid(row=0, column=0, padx=10, pady=1)
+        button_main_page.grid(row=0, column=0, padx=10, pady=10)

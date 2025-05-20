@@ -76,6 +76,13 @@ class PointDataInputs(tk.Frame):
         )
         button_file.grid(row=2, column=0, padx=10, pady=10)
 
+        csv_note_label = ttk.Label(
+           path_variables_frame,
+            text='Note: All data files must have ".csv" as their extension, including the "Output CSV Name".',
+            foreground="red"
+        )
+        csv_note_label.grid(row=3, column=0, columnspan=4, padx=10, pady=(20, 5), sticky="w")
+
 
         ##### Start of Simulation Variable Form #####
         simulation_variable_frame = ttk.LabelFrame(self, text="Processing Variables")
@@ -155,6 +162,13 @@ class PointDataInputs(tk.Frame):
         config_file_name_label.grid(row=0, column=2, padx=10, pady=10)
         config_file_name.grid(row=0, column=3, padx=10, pady=10)
         config_file_name.bind('<KeyRelease>', lambda e: check_string(self, e.widget, ".json"))
+
+        csv_note_label = ttk.Label(
+            configuration_frame,
+            text='Note: "Output JSON Name" must have the ".json" extension.',
+            foreground="red"
+        )
+        csv_note_label.grid(row=1, column=0, columnspan=4, padx=10, pady=(20, 5), sticky="w")
 
         ##### Data Prep Section #####
         form_data = {

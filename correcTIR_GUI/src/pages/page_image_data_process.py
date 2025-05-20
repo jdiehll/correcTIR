@@ -28,32 +28,67 @@ class ProcessImageData(ttk.Frame):
             text="Create Config File To Process Data",
             command=lambda: window.show_frame("ImageDataInputs"),
         )
-        button_point_data_inputs_page.grid(row=0, column=0, padx=10, pady=10)
+        button_point_data_inputs_page.grid(row=0, column=0, padx=10, pady=10, sticky="w")
 
         config_path = ttk.Entry(image_data_frame)
-        config_path.grid(row=2, column=0, padx=10, pady=1)
+        config_path.grid(row=2, column=0, padx=10, pady=10, sticky="w")
 
         button_config_path = ttk.Button(
             image_data_frame,
             text="Select Already Created Config File",
             command=lambda: get_path(self, config_path, file_type="*.json")
         )
-        button_config_path.grid(row=1, column=0, padx=10, pady=10)
+        button_config_path.grid(row=1, column=0, padx=10, pady=10, sticky="w")
 
-        open_overlay
+        help_icon = ttk.Button(
+            image_data_frame,
+            text="?",
+            width=2,
+            command=lambda: self.helpButton(
+                title='Config File Selection Help',
+                message="Select the config file you want to use for processing or create a new config file above. \
+                    \n\nNote: The config file must be in JSON format (.json)."
+            )
+        )
+        help_icon.grid(row=1, column=1, sticky="w", padx=(0, 2), pady=10)
+
         button_open_overlay = ttk.Button(
             image_data_frame, 
             text="Check ROI(s)",
             command=lambda: open_overlay(config_path.get())
         )
-        button_open_overlay.grid(row=3, column=0, padx=10, pady=10)
+        button_open_overlay.grid(row=3, column=0, padx=10, pady=10, sticky="w")
+
+        help_icon = ttk.Button(
+            image_data_frame,
+            text="?",
+            width=2,
+            command=lambda: self.helpButton(
+            title='Check ROI Help',
+            message="Check the ROI specified in teh config file. \
+                \n\nNote: The config file must be in JSON format."
+            )
+        )
+        help_icon.grid(row=3, column=1, sticky="w", padx=(0, 2), pady=10)
 
         button_processing_page = ttk.Button(
             image_data_frame, 
             text="Process Image Data",
-            command=lambda: process_data(config_path.get())
+            command=lambda: self.process_data_with_check(config_path.get())
         )
-        button_processing_page.grid(row=4, column=0, padx=10, pady=10)
+        button_processing_page.grid(row=4, column=0, padx=10, pady=10, sticky="w")
+
+        help_icon = ttk.Button(
+            image_data_frame,
+            text="?",
+            width=2,
+            command=lambda: self.helpButton(
+            title='Process Image Help',
+            message='Process the images specified in the config file. \
+                \n\nNote: The config file must be specified above using "Select Already Created Config File," and the file should be in JSON format (.json).'
+            )
+        )
+        help_icon.grid(row=4, column=1, sticky="w", padx=(0, 2), pady=10)
 
         # Buttons for returning to the image or main pages.
         button_frame = ttk.LabelFrame(self, text="")
@@ -71,4 +106,24 @@ class ProcessImageData(ttk.Frame):
             text="Main Page",
             command=lambda: window.show_frame("MainPage"),
         )
-        button_main_page.grid(row=0, column=1, padx=10, pady=1)
+        button_main_page.grid(row=0, column=1, padx=10, pady=10)
+
+    # Help button"
+    def helpButton(self, message: str, title: str = "Help"):
+        """
+        Display a help message box with the given message and title."""
+        tk.messagebox.showinfo(title=title, message=message)
+
+    def process_data_with_check(self, config_path: str):
+        """
+        Process the data with a check for the config path.
+        """
+        if not os.path.isfile(config_path):
+            tk.messagebox.showerror("Error", "Config file not found.\n" \
+            "Please load a config file in JSON format above.")
+            return
+        if not config_path.endswith('.json'):
+            tk.messagebox.showerror("Error", "Config file must be in JSON format.\n" \
+            "Please load a config file in JSON format above.")
+            return
+        process_data(config_path)

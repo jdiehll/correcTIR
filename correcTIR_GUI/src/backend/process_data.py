@@ -65,6 +65,10 @@ def process_data(config_path: str):
         print(f"Unknown data type: {data_type}")
 
 def open_overlay(config_path):
+    if not os.path.isfile(config_path):
+        messagebox.showerror("Error", "Config file not found.\n" \
+        "Please load a config file in JSON format above.")
+        return
     config = load_json(config_path)
     if config == False:
         return

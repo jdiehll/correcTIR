@@ -17,6 +17,7 @@ import numpy as np  # Numerical operations
 from PIL import Image  # Image handling
 import cv2  # Computer vision processing
 import tkinter as tk  # GUI components
+from tkinter import messagebox
 from tkinter import ttk  # Themed widgets for Tkinter
 from collections import OrderedDict
 
@@ -112,6 +113,21 @@ def setup_gui_and_start(Aux_Met_Data, aux_met_window, FLUX_Met_Data, flux_met_wi
     root.title("Processing Images")
 
     progress_bar = ttk.Progressbar(root, orient="horizontal", length=300, mode="determinate")
+
+    # Function to close the window when processing is complete
+    def close_window():
+        root.destroy()
+        messagebox.showinfo("Image", "Image processing complete!")
+
+    # Check if the progress bar is complete and close the window
+    def check_progress():
+        if progress_bar['value'] >= progress_bar['maximum']:
+            status_label.config(text="Processing complete.")
+            root.after(1000, close_window)
+        else:
+            root.after(500, check_progress)
+
+    root.after(500, check_progress)
     progress_bar.pack(pady=10)
 
     # Label for showing the processing status
@@ -197,6 +213,21 @@ def setup_gui_and_start_point(Aux_Met_Data, aux_met_window, FLUX_Met_Data, flux_
             root.after(100, update_progress_bar)
 
     update_progress_bar()
+
+    # Function to close the window when processing is complete
+    def close_window():
+        root.destroy()
+        messagebox.showinfo("Point Data", "Point data processing complete!")
+
+    # Check if the progress bar is complete and close the window
+    def check_progress():
+        if progress_bar['value'] >= progress_bar['maximum']:
+            status_label.config(text="Processing complete.")
+            root.after(1000, close_window)
+        else:
+            root.after(500, check_progress)
+
+    root.after(500, check_progress)
 
     root.mainloop()
 

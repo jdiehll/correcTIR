@@ -51,6 +51,17 @@ class DrawROI(ttk.Frame):
         output_roi_file_name.grid(row=2, column=3, padx=10, pady=10)
         output_roi_file_name.bind('<KeyRelease>', lambda e: check_string(self, e.widget, ".csv"))
 
+        help_icon = ttk.Button(
+            roi_frame,
+            text="?",
+            width=2,
+            command=lambda: self.helpButton(
+                title='Output CSV Name Help',
+                message="Note: The output CSV file must be in CSV format (end in .csv)."
+            )
+        )
+        help_icon.grid(row=2, column=4, sticky="w", padx=(0, 2), pady=10)
+
         button_drawROI = ttk.Button(
             roi_frame,
             text='Run Draw ROI Function',
@@ -92,3 +103,9 @@ class DrawROI(ttk.Frame):
             else:
                 messagebox.showerror(title="Error in draw ROI!", message=f'There was an error submitting the tiff to draw ROI: {tiff_path.get()}.')
             return
+
+    # Help button"
+    def helpButton(self, message: str, title: str = "Help"):
+        """
+        Display a help message box with the given message and title."""
+        tk.messagebox.showinfo(title=title, message=message)

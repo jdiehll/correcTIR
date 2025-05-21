@@ -65,7 +65,7 @@ class ProcessImageData(ttk.Frame):
             width=2,
             command=lambda: self.helpButton(
             title='Check ROI Help',
-            message="Check the ROI specified in teh config file. \
+            message="Check the ROI specified in the config file. Only works if Config File above is populated. \
                 \n\nNote: The config file must be in JSON format."
             )
         )

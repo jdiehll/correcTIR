@@ -25,6 +25,8 @@ class ThermoCam(tk.Tk):
 
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
+        self.geometry("800x600")  # width x height in pixels
+
         self.title_font = tkfont.Font(family='Helvetica', size=14, weight="bold", slant="italic")
 
         self.platform = platform.system()

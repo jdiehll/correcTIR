@@ -242,7 +242,7 @@ For users who want to run individual functions or the full pipeline in Python, t
 To download the latest version of the repository, open a terminal or command prompt and run:
 
 ```
-git clone [[https://github.com/Thermal-Cam-Network/TIRPost.git](https://github.com/Thermal-Cam-Network/TIRPost.git)](https://github.com/jdiehll/correcTIR.git)
+git clone https://github.com/jdiehll/correcTIR.git
 ```
 If you don’t have Git installed, you can download the repository manually by clicking Code → Download ZIP on GitHub and extracting the contents.
 
@@ -340,36 +340,78 @@ For users who prefer a graphical user interface (GUI), the correcTIR GUI is avai
 
 _Note: correcTIR is not available on mobile devices (Android, iPhone)._
 
-Regardless of the OS used either a Conda or Python virtual environment is recommended. Without a virtual environemt or Conda environment pyinstaller may not be available unless added to the path variable. 
+### Installation
 
-Creating a virtual environment. Note it may be necessary to type python3 and not just python.
+1. Clone the Repository
+
+To download the latest version of the repository, open a terminal or command prompt and run:
+
+```
+git clone https://github.com/jdiehll/correcTIR.git
+```
+If you don’t have Git installed, you can download the repository manually by clicking Code → Download ZIP on GitHub and extracting the contents.
+
+2. Navigate into the Cloned GUI Directory
+
+Move into the project folder:
+
+```
+cd correcTIR/correcTIR_GUI
+```
+
+3. Create and Activate a Virtual Environment (Recommended regardless of OS used)
+
+To create a virtual environment:
 ```
 python -m venv /path/to/new/virtual/environment
 ```
+_Note it may be necessary to type python3 and not just python._
 
-To create a conda environment see the [conda documentation](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html). 
+For instructions on creating a Conda environment, refer to the [conda documentation](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html). 
 
-Once a virtual environment is created install all of the TIR dependencies see [Requirements](#requirements) section. Run the following based on your OS in the terminal. The path to the correcTIR directory should be to the directory containing Main_Functions.py.
+Once the virtual environment is created, install all required correcTIR dependencies (see [Requirements](#requirements) section). 
+
+4. Compiling App
+
+Run the following based on your OS in the terminal.
 
 ### Windows
 ```
-pyinstaller --paths='correcTIR diectory path' --windowed --onedir  .\correcTIR.py
-# For one file. The program will start slower. 
-pyinstaller --paths='correcTIR diectory path' --windowed --onedir  .\correcTIR.py
+pyinstaller --paths='../correcTIR' --icon=../Figures/logo.ico  --windowed --onedir .\correcTIR.py
+```
+Or for one file, run the following: (The program will start slower)
+```
+pyinstaller --paths='../correcTIR' --icon=../Figures/logo.ico --windowed --onefile .\correcTIR.py
 ```
 
 ### MacOS
 ```
-pyinstaller --paths='correcTIR diectory path' -w --noupx --onedir correcTIR.py
-# For one file. The program will start slower. 
-pyinstaller --paths='correcTIR diectory path' -w --noupx --onedir --onefile correcTIR.py
+pyinstaller --paths='../correcTIR' --icon=../Figures/logo.ico -w --noupx --onedir correcTIR.py
+```
+Or for one file, run the following: (The program will start slower)
+```
+pyinstaller --paths='../correcTIR' --icon=../Figures/logo.ico -w --noupx --onefile correcTIR.py
 ```
 
 ### Linux
 ```bash
-pyinstaller --paths='correcTIR diectory path' --windowed --onedir correcTIR.py
-# For one file. The program will start slower. 
-pyinstaller --paths='correcTIR diectory path' --windowed --onedir --onefile correcTIR.py
+pyinstaller --paths='../correcTIR' --icon=../Figures/logo.ico --windowed --onedir correcTIR.py
+```
+Or for one file, run the following: (The program will start slower)
+```bash
+pyinstaller --paths='../correcTIR' --icon=../Figures/logo.ico --windowed --onefile correcTIR.py
+```
+
+_Note: You may be asked "ALL ITS CONTENTS will be REMOVED! Continue? (y/N)" type 'y' and hit enter._
+
+5. Opening The App
+
+Once the app has been successfully downloaded, navigate to the dist folder located at: 'correcTIR/correcTIR_GUI/dist'
+Inside this folder, you’ll find the application. Simply double-click it to launch.
+
+_Note: New updates and releases may become available periodically. To update your local copy of the repository, run:_
+```
+git pull origin main
 ```
 
 ## Requirements

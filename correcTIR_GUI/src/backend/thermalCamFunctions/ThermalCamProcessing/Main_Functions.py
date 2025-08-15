@@ -477,54 +477,49 @@ def initialize_roi_masks_and_distances(roi_csv_path, distance_csv_path, image_pa
     average_distances = calculate_average_distances(distance_csv_path, roi_masks, data_type)
     
     return roi_masks, average_distances
+import numpy as np
+from PIL import Image
 
 def calculate_roi_means_for_tiff(tiff_image_path, roi_masks):
     """
-    Calculate mean, std, and percentiles for each ROI in a TIFF image.
-    The std is computed from raw pixel values and reported for all stats.
+    Returns, for each ROI:
+      - values (raw ROI pixels)
+      - mean, mean_uncorrected_std
+      - percentile values (no std for percentiles)
     """
     with Image.open(tiff_image_path) as img:
         image_array = np.array(img)
 
         roi_stats = {}
+        pct_list = [1, 5, 10, 25, 50, 75, 90, 95, 99]
+
         for label, mask in roi_masks.items():
-            selected_values = image_array[mask]
-            selected_values = selected_values[~np.isnan(selected_values)]
+            vals = image_array[mask]
+            vals = vals[np.isfinite(vals)]  # drop NaNs/Infs
 
-            if selected_values.size > 0:
-                std_value = np.std(selected_values, ddof=1)  # sample std
-                percentiles = np.percentile(selected_values, [1, 5, 10, 25, 50, 75, 90, 95, 99])
-                mean_value = np.mean(selected_values)
+            if vals.size > 0:
+                std_raw = float(np.std(vals, ddof=1))  # sample std
+                mean_val = float(np.mean(vals))
+                pcts = np.percentile(vals, pct_list)
 
-                roi_stats[label] = {
-                    "values": selected_values,  # still keep for later if needed
-                    "mean": mean_value,
-                    "mean_uncorrected_std": std_value,
-                    "p1": percentiles[0],
-                    "p1_uncorrected_std": std_value,
-                    "p5": percentiles[1],
-                    "p5_uncorrected_std": std_value,
-                    "p10": percentiles[2],
-                    "p10_uncorrected_std": std_value,
-                    "p25": percentiles[3],
-                    "p25_uncorrected_std": std_value,
-                    "p50": percentiles[4],
-                    "p50_uncorrected_std": std_value,
-                    "p75": percentiles[5],
-                    "p75_uncorrected_std": std_value,
-                    "p90": percentiles[6],
-                    "p90_uncorrected_std": std_value,
-                    "p95": percentiles[7],
-                    "p95_uncorrected_std": std_value,
-                    "p99": percentiles[8],
-                    "p99_uncorrected_std": std_value
+                d = {
+                    "values": vals,
+                    "mean": mean_val,
+                    "mean_uncorrected_std": std_raw
                 }
+                for p, v in zip(pct_list, pcts):
+                    d[f"p{p}"] = float(v)
+
+                roi_stats[label] = d
             else:
-                roi_stats[label] = {
+                d = {
                     "values": np.array([]),
-                    **{stat: np.nan for stat in ["mean"] + [f"p{p}" for p in [1, 5, 10, 25, 50, 75, 90, 95, 99]]},
-                    **{f"{stat}_uncorrected_std": np.nan for stat in ["mean"] + [f"p{p}" for p in [1, 5, 10, 25, 50, 75, 90, 95, 99]]}
+                    "mean": np.nan,
+                    "mean_uncorrected_std": np.nan
                 }
+                for p in pct_list:
+                    d[f"p{p}"] = np.nan
+                roi_stats[label] = d
 
     return roi_stats
     
@@ -758,85 +753,62 @@ def process_and_export_corrected_roi_means(
     Aux_Met_Data, FLUX_Met_Data, aux_met_window, flux_met_window,
     emissivity_target, elevation, sky_percent, emissivity_vf2, win_transmittance
 ):
-    """
-    Process and export corrected ROI percentiles and mean for a TIFF image while retaining uncorrected values.
-    Now: we only report the standard deviation computed on RAW values (uncorrected),
-    and we DO NOT apply corrections to any uncertainty metric.
-    """
     try:
-        # 1) lookup met/logger info
         file_data = find_matching_logger_data(
             image_path, Aux_Met_Data, FLUX_Met_Data, aux_met_window, flux_met_window, elevation
         )
 
-        # 2) required fields
         required_fields = ['T_air', 'RH', 'sky_temp', 'LW_IN', 'rho_v']
         if sky_percent != 100:
             required_fields.append('VF_2')
         if win_transmittance != 1:
             required_fields.append('T_win')
 
-        missing_fields = [f for f in required_fields if file_data.get(f) is None]
-        if missing_fields:
-            print(f"Skipping {image_path} due to missing fields: {', '.join(missing_fields)}")
+        missing = [f for f in required_fields if file_data.get(f) is None]
+        if missing:
+            print(f"Skipping {image_path} due to missing fields: {', '.join(missing)}")
             return None
 
-        # 3) stats from TIFF
         roi_stats = calculate_roi_means_for_tiff(image_path, roi_masks)
-
-        # 4) order of stats to write
         percentiles_list = ["mean", 1, 5, 10, 25, 50, 75, 90, 95, 99]
 
-        # 5) start output dict with metadata (preserve order)
         ordered_file_data = OrderedDict(file_data)
 
-        # 6) process each ROI
         for label in sorted(roi_stats.keys()):
             dist = average_distances.get(label)
             if dist is None:
                 raise ValueError(f"Missing distance for ROI label '{label}'")
 
-            # tau may depend on ROI distance; compute/store once per ROI
             rho_v = file_data.get('rho_v')
             file_data['tau'] = atm_trans(dist, rho_v)
             ordered_file_data['tau'] = file_data['tau']
 
-            # std from raw values:
-            # - prefer per-stat key if present (e.g., "p50_uncorrected_std")
-            # - else fall back to a single "uncorrected_std" for the ROI if you chose that schema
             for perc in percentiles_list:
                 key = "mean" if perc == "mean" else f"p{perc}"
 
-                # Uncorrected stat value
                 value = roi_stats[label].get(key, np.nan)
                 ordered_file_data[f"{label}_{key}_uncorrected"] = value
 
-                # Raw std (uncorrected) — written for ALL stats
-                std_key_per_stat = f"{key}_uncorrected_std"
-                if std_key_per_stat in roi_stats[label]:
-                    raw_std = roi_stats[label][std_key_per_stat]
-                else:
-                    raw_std = roi_stats[label].get("uncorrected_std", np.nan)
-                ordered_file_data[f"{label}_{key}_uncorrected_std"] = raw_std
+                # Write std only for mean
+                if key == "mean":
+                    raw_std = roi_stats[label].get("mean_uncorrected_std", np.nan)
+                    ordered_file_data[f"{label}_{key}_uncorrected_std"] = raw_std
 
-                # Apply corrections ONLY to the scalar stat (not to std)
+                # Apply correction to the stat value only
                 cv, cv_twin1, cv_tau1, cv_emiss1 = correct_integer_image(
                     value, file_data, emissivity_target, sky_percent, emissivity_vf2, win_transmittance
                 )
-
                 ordered_file_data[f"{label}_{key}_fully_corrected"] = cv
                 ordered_file_data[f"{label}_{key}_tau1"]            = cv_tau1
                 ordered_file_data[f"{label}_{key}_twin1"]           = cv_twin1
                 ordered_file_data[f"{label}_{key}_emiss1"]          = cv_emiss1
-
-                # NOTE: no corrected std/sem columns are added
 
         return ordered_file_data
 
     except Exception as e:
         print(f"Error processing {image_path}: {e}")
         return None
-
+        
 def process_images_in_folders(Aux_Met_Data, aux_met_window, FLUX_Met_Data, flux_met_window, sky_percent, emissivity_vf2, emissivity_target, elevation, win_transmittance, roi_masks, average_distances, base_folder, output_csv_path, progress_bar, status_label, root):
     """
     Process images in folders and export the results to a CSV file with a progress bar and time tracking.

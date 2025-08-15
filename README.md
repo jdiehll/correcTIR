@@ -469,6 +469,7 @@ For each Region of Interest (ROI_X), the following values are computed as additi
 where {stat} represents one of the following statistical measures:
 
 * mean: Mean value
+  * These values will also include standard error (columns with _sem) for each type of correction
 * p1: 1st percentile
 * p5: 5th percentile
 * p10: 10th percentile

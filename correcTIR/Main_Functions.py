@@ -480,55 +480,54 @@ def initialize_roi_masks_and_distances(roi_csv_path, distance_csv_path, image_pa
 
 def calculate_roi_means_for_tiff(tiff_image_path, roi_masks):
     """
-    Calculate the mean and the 1st, 5th, 10th, 25th, 50th, 75th, 90th, 95th, and 99th percentiles 
-    for each ROI in a TIFF image.
-
-    Parameters:
-    tiff_image_path (str): Path to the .tiff image file.
-    roi_masks (dict): A dictionary containing masks for each ROI.
-
-    Returns:
-    dict: A dictionary with ROI labels as keys and another dictionary with 
-          percentiles and mean as values.
+    Calculate mean, std, and percentiles for each ROI in a TIFF image.
+    The std is computed from raw pixel values and reported for all stats.
     """
-    # Open the .tiff file
     with Image.open(tiff_image_path) as img:
         image_array = np.array(img)
 
-        # Dictionary to store percentiles for each ROI
         roi_stats = {}
-
         for label, mask in roi_masks.items():
-            # Extract only the values within the ROI (ignoring NaNs)
             selected_values = image_array[mask]
-
-            # Remove NaN values (if any)
             selected_values = selected_values[~np.isnan(selected_values)]
 
             if selected_values.size > 0:
-                # Compute percentiles
+                std_value = np.std(selected_values, ddof=1)  # sample std
                 percentiles = np.percentile(selected_values, [1, 5, 10, 25, 50, 75, 90, 95, 99])
-                mean_value = np.mean(selected_values)  # Compute mean
+                mean_value = np.mean(selected_values)
 
-                # Store results in a dictionary
                 roi_stats[label] = {
+                    "values": selected_values,  # still keep for later if needed
                     "mean": mean_value,
+                    "mean_uncorrected_std": std_value,
                     "p1": percentiles[0],
+                    "p1_uncorrected_std": std_value,
                     "p5": percentiles[1],
+                    "p5_uncorrected_std": std_value,
                     "p10": percentiles[2],
+                    "p10_uncorrected_std": std_value,
                     "p25": percentiles[3],
+                    "p25_uncorrected_std": std_value,
                     "p50": percentiles[4],
+                    "p50_uncorrected_std": std_value,
                     "p75": percentiles[5],
+                    "p75_uncorrected_std": std_value,
                     "p90": percentiles[6],
+                    "p90_uncorrected_std": std_value,
                     "p95": percentiles[7],
-                    "p99": percentiles[8]
+                    "p95_uncorrected_std": std_value,
+                    "p99": percentiles[8],
+                    "p99_uncorrected_std": std_value
                 }
             else:
-                # If no valid pixels in ROI, store NaNs
-                roi_stats[label] = {"mean": np.nan, **{f"p{p}": np.nan for p in [1, 5, 10, 25, 50, 75, 90, 95, 99]}}
+                roi_stats[label] = {
+                    "values": np.array([]),
+                    **{stat: np.nan for stat in ["mean"] + [f"p{p}" for p in [1, 5, 10, 25, 50, 75, 90, 95, 99]]},
+                    **{f"{stat}_uncorrected_std": np.nan for stat in ["mean"] + [f"p{p}" for p in [1, 5, 10, 25, 50, 75, 90, 95, 99]]}
+                }
 
     return roi_stats
-
+    
 def extract_timestamp(tiff_image_path):
     """
     Extract the timestamp from a TIFF image filename and convert it to a Pandas datetime object.
@@ -754,125 +753,85 @@ def correct_integer_image(integerImg, file_data, emissivity_target, sky_percent,
         radiance_to_temp(integerObj_emiss1)
     )
 
-def process_and_export_corrected_roi_means(image_path, roi_masks, average_distances, Aux_Met_Data, FLUX_Met_Data, aux_met_window, flux_met_window, emissivity_target, elevation, sky_percent, emissivity_vf2, win_transmittance):
+def process_and_export_corrected_roi_means(
+    image_path, roi_masks, average_distances,
+    Aux_Met_Data, FLUX_Met_Data, aux_met_window, flux_met_window,
+    emissivity_target, elevation, sky_percent, emissivity_vf2, win_transmittance
+):
     """
     Process and export corrected ROI percentiles and mean for a TIFF image while retaining uncorrected values.
-
-    Parameters:
-    image_path (str): Path to the TIFF image.
-    roi_masks (dict): Dictionary of ROI masks.
-    average_distances (dict): Dictionary of average distances for each ROI.
-    Aux_Met_Data (pd.DataFrame): DataFrame containing auxiliary meteorological data.
-    FLUX_Met_Data (pd.DataFrame): DataFrame containing FLUX meteorological data.
-    aux_met_window (int): Time window in minutes for searching auxiliary meteorological data.
-    flux_met_window (int): Time window in minutes for searching FLUX meteorological data.
-    emissivity_target (float): Emissivity value of target object.
-    elevation (float): Site elevation value.
-    sky_percent (int): Percent of target's view factor that is composed of sky.
-    emissivity_vf2 (float): Emissivity of the dominant surrounding object other than sky.
-    win_transmittance (float): The transmittance value of the enclosure window.
-
-    Returns:
-    OrderedDict: Dictionary containing processed data, structured correctly with all ROI 
-                 values grouped together, including the mean and percentiles.
+    Now: we only report the standard deviation computed on RAW values (uncorrected),
+    and we DO NOT apply corrections to any uncertainty metric.
     """
     try:
-        # 1. Extract necessary information from the filename and get file_data
-        file_data = find_matching_logger_data(image_path, Aux_Met_Data, FLUX_Met_Data, aux_met_window, flux_met_window, elevation)
-        
-        #Validate required fields are present
-        required_fields = ['T_air', 'RH', 'sky_temp', 'LW_IN','rho_v']
+        # 1) lookup met/logger info
+        file_data = find_matching_logger_data(
+            image_path, Aux_Met_Data, FLUX_Met_Data, aux_met_window, flux_met_window, elevation
+        )
 
+        # 2) required fields
+        required_fields = ['T_air', 'RH', 'sky_temp', 'LW_IN', 'rho_v']
         if sky_percent != 100:
             required_fields.append('VF_2')
         if win_transmittance != 1:
             required_fields.append('T_win')
 
-        missing_fields = [field for field in required_fields if file_data.get(field) is None]
-
+        missing_fields = [f for f in required_fields if file_data.get(f) is None]
         if missing_fields:
             print(f"Skipping {image_path} due to missing fields: {', '.join(missing_fields)}")
             return None
 
-        # 2. Extract mean and percentiles for each ROI from the TIFF image
+        # 3) stats from TIFF
         roi_stats = calculate_roi_means_for_tiff(image_path, roi_masks)
 
-        # 3. Define the order of stored values (mean + percentiles)
+        # 4) order of stats to write
         percentiles_list = ["mean", 1, 5, 10, 25, 50, 75, 90, 95, 99]
 
-        # 4. Initialize an ordered dictionary for structured output
-        ordered_file_data = OrderedDict(file_data)  # Preserve initial metadata order
-        
-        def sem_or_nan(x):
-            x = np.asarray(x, dtype=float)
-            return (np.std(x, ddof=1) / np.sqrt(x.size)) if x.size > 1 else np.nan
-        
-        # 5. Process and structure the ROI values
-        for label in sorted(roi_stats.keys()):  # Ensure ROIs are processed in order
+        # 5) start output dict with metadata (preserve order)
+        ordered_file_data = OrderedDict(file_data)
+
+        # 6) process each ROI
+        for label in sorted(roi_stats.keys()):
             dist = average_distances.get(label)
-            rho_v = file_data.get('rho_v')
-        
             if dist is None:
                 raise ValueError(f"Missing distance for ROI label '{label}'")
-        
+
+            # tau may depend on ROI distance; compute/store once per ROI
+            rho_v = file_data.get('rho_v')
             file_data['tau'] = atm_trans(dist, rho_v)
             ordered_file_data['tau'] = file_data['tau']
-        
-            # Precompute corrected arrays if we have raw values
-            has_values = ("values" in roi_stats[label]) and (len(roi_stats[label]["values"]) > 0)
-            raw_vals = np.asarray(roi_stats[label]["values"], dtype=float) if has_values else None
-        
-            if has_values:
-                corr_full, corr_tau1, corr_twin1, corr_emiss1 = [], [], [], []
-                for v in raw_vals:
-                    c_full, c_twin1, c_tau1, c_emiss1 = correct_integer_image(
-                        v, file_data, emissivity_target, sky_percent, emissivity_vf2, win_transmittance
-                    )
-                    corr_full.append(c_full)
-                    corr_tau1.append(c_tau1)
-                    corr_twin1.append(c_twin1)
-                    corr_emiss1.append(c_emiss1)
-        
-                corr_full   = np.asarray(corr_full,   dtype=float)
-                corr_tau1   = np.asarray(corr_tau1,   dtype=float)
-                corr_twin1  = np.asarray(corr_twin1,  dtype=float)
-                corr_emiss1 = np.asarray(corr_emiss1, dtype=float)
-        
-            for perc in percentiles_list:  # Include both mean and percentiles
-                key = f"p{perc}" if perc != "mean" else "mean"
-                value = roi_stats[label][key]  # scalar mean or percentile
-        
-                # --- Uncorrected scalar and its SEM (mean only) ---
+
+            # std from raw values:
+            # - prefer per-stat key if present (e.g., "p50_uncorrected_std")
+            # - else fall back to a single "uncorrected_std" for the ROI if you chose that schema
+            for perc in percentiles_list:
+                key = "mean" if perc == "mean" else f"p{perc}"
+
+                # Uncorrected stat value
+                value = roi_stats[label].get(key, np.nan)
                 ordered_file_data[f"{label}_{key}_uncorrected"] = value
-                if key == "mean" and has_values:
-                    ordered_file_data[f"{label}_{key}_uncorrected_sem"] = sem_or_nan(raw_vals)
-        
-                # --- Correct the scalar aggregate (matches your existing outputs) ---
-                corrected_value, corrected_value_twin1, corrected_value_tau1, corrected_value_emiss1 = correct_integer_image(
+
+                # Raw std (uncorrected) — written for ALL stats
+                std_key_per_stat = f"{key}_uncorrected_std"
+                if std_key_per_stat in roi_stats[label]:
+                    raw_std = roi_stats[label][std_key_per_stat]
+                else:
+                    raw_std = roi_stats[label].get("uncorrected_std", np.nan)
+                ordered_file_data[f"{label}_{key}_uncorrected_std"] = raw_std
+
+                # Apply corrections ONLY to the scalar stat (not to std)
+                cv, cv_twin1, cv_tau1, cv_emiss1 = correct_integer_image(
                     value, file_data, emissivity_target, sky_percent, emissivity_vf2, win_transmittance
                 )
-        
-                # Fully corrected mean + SEM written back-to-back
-                ordered_file_data[f"{label}_{key}_fully_corrected"] = corrected_value
-                if key == "mean" and has_values:
-                    ordered_file_data[f"{label}_{key}_fully_corrected_sem"] = sem_or_nan(corr_full)
-        
-                # tau1 mean + SEM
-                ordered_file_data[f"{label}_{key}_tau1"] = corrected_value_tau1
-                if key == "mean" and has_values:
-                    ordered_file_data[f"{label}_{key}_tau1_sem"] = sem_or_nan(corr_tau1)
-        
-                # twin1 mean + SEM
-                ordered_file_data[f"{label}_{key}_twin1"] = corrected_value_twin1
-                if key == "mean" and has_values:
-                    ordered_file_data[f"{label}_{key}_twin1_sem"] = sem_or_nan(corr_twin1)
-        
-                # emiss1 mean + SEM
-                ordered_file_data[f"{label}_{key}_emiss1"] = corrected_value_emiss1
-                if key == "mean" and has_values:
-                    ordered_file_data[f"{label}_{key}_emiss1_sem"] = sem_or_nan(corr_emiss1)
 
-        return ordered_file_data  # Returns an OrderedDict to maintain structured output
+                ordered_file_data[f"{label}_{key}_fully_corrected"] = cv
+                ordered_file_data[f"{label}_{key}_tau1"]            = cv_tau1
+                ordered_file_data[f"{label}_{key}_twin1"]           = cv_twin1
+                ordered_file_data[f"{label}_{key}_emiss1"]          = cv_emiss1
+
+                # NOTE: no corrected std/sem columns are added
+
+        return ordered_file_data
 
     except Exception as e:
         print(f"Error processing {image_path}: {e}")

@@ -1,5 +1,5 @@
 # =============================================
-# LIBRARY IMPORTSS
+# LIBRARY IMPORTS
 # =============================================
 # Standard library imports
 import os
@@ -17,6 +17,7 @@ import numpy as np  # Numerical operations
 from PIL import Image  # Image handling
 import cv2  # Computer vision processing
 import tkinter as tk  # GUI components
+from tkinter import messagebox
 from tkinter import ttk  # Themed widgets for Tkinter
 from collections import OrderedDict
 
@@ -46,29 +47,23 @@ def process_data(config_path):
     data_type = config.get('data', None)
 
     if data_type == 'image':
-        print("Processing image-based data...")
-        Aux_Met_Data, FLUX_Met_Data, roi_masks, average_distances, Aux_Met_window, FLUX_Met_window, base_folder, output_csv_path, emissivity, elevation = initialize_data_from_config_image(config_path)
+        print("Processing data...")
+        Aux_Met_Data, aux_met_window, FLUX_Met_Data, flux_met_window, sky_percent, emissivity_vf2, emissivity_target, elevation, win_transmittance, roi_masks, average_distances, base_folder, output_csv_path = initialize_data_from_config_image(config_path)
 
         setup_gui_and_start(
-            base_folder, roi_masks, average_distances,
-            Aux_Met_Data, FLUX_Met_Data, 
-            Aux_Met_window, FLUX_Met_window, 
-            output_csv_path, emissivity, elevation
-        )
+            Aux_Met_Data, aux_met_window, FLUX_Met_Data, flux_met_window, sky_percent, emissivity_vf2, emissivity_target, elevation, win_transmittance, roi_masks, average_distances, base_folder, output_csv_path)
 
     elif data_type == 'point':
-        print("Processing point-based data...")
-        Aux_Met_Data, FLUX_Met_Data, Aux_Met_window, FLUX_Met_window, point_dist, output_csv_path, emissivity, point_data_path, elevation = initialize_data_from_config_point(config_path)
+        print("Processing data...")
+        Aux_Met_Data, aux_met_window, FLUX_Met_Data, flux_met_window, sky_percent, emissivity_vf2, emissivity_target, elevation, win_transmittance, point_data_path, point_dist, output_csv_path = initialize_data_from_config_point(config_path)
 
         setup_gui_and_start_point(
-            point_data_path, point_dist,
-            Aux_Met_Data, FLUX_Met_Data,
-            Aux_Met_window, FLUX_Met_window,
-            output_csv_path, emissivity, elevation
+            Aux_Met_Data, aux_met_window, FLUX_Met_Data, flux_met_window, sky_percent, emissivity_vf2,
+            emissivity_target, elevation, win_transmittance, point_data_path, point_dist, output_csv_path
         )
 
     else:
-        print(f"Unknown data type: {data_type}")
+        print(f"Unknown data type (must be image or point): {data_type}")
 
 def run_pipeline(config_path):
     """Runs the entire pipeline including data processing and optional ROI visualization."""
@@ -90,7 +85,7 @@ def start_processing_thread(*args):
     processing_thread = threading.Thread(target=process_images_in_folders, args=args)
     processing_thread.start()
 
-def setup_gui_and_start(base_folder, roi_masks, average_distances, Aux_Met_Data, FLUX_Met_Data, Aux_Met_window, FLUX_Met_window, output_csv_path, emissivity, elevation):
+def setup_gui_and_start(Aux_Met_Data, aux_met_window, FLUX_Met_Data, flux_met_window, sky_percent, emissivity_vf2, emissivity_target, elevation, win_transmittance, roi_masks, average_distances, base_folder, output_csv_path):
     """
     Sets up the graphical user interface (GUI) and starts the image processing in a separate thread.
 
@@ -100,19 +95,39 @@ def setup_gui_and_start(base_folder, roi_masks, average_distances, Aux_Met_Data,
     image processing.
 
     Parameters:
-    base_folder (str): The base folder path where the images are located.
+    Aux_Met_Data (pd.DataFrame): DataFrame containing preprocessed auxiliary meteorological data.
+    aux_met_window (int): Time window in minutes for searching auxiliary meteorological data.
+    FLUX_Met_Data (pd.DataFrame): DataFrame containing preprocessed FLUX meteorological data.
+    flux_met_window (int): Time window in minutes for searching FLUX meteorological data.
+    sky_percent (int): Percent of target's view factor that is composed of sky.
+    emissivity_vf2 (float): Emissivity of the dominant surrounding object other than sky.
+    emissivity_target (float): Emissivity value from the configuration.
+    elevation (float): Site elevation.
+    win_transmittance (float): The transmittance value of the enclosure window.
     roi_masks (dict): A dictionary of Region of Interest (ROI) masks.
     average_distances (dict): A dictionary of average distances for each ROI.
-    Aux_Met_Data (pd.DataFrame): DataFrame containing auxiliary meteorological data.
-    FLUX_Met_Data (pd.DataFrame): DataFrame containing FLUX meteorological data.
-    Aux_Met_window (int): Time window in minutes for searching auxiliary meteorological data.
-    FLUX_Met_window (int): Time window in minutes for searching FLUX meteorological data.
+    base_folder (str): The base folder path where the images are located.
     output_csv_path (str): Path to the output CSV file where the results will be saved.
     """
     root = tk.Tk()
     root.title("Processing Images")
 
     progress_bar = ttk.Progressbar(root, orient="horizontal", length=300, mode="determinate")
+
+    # Function to close the window when processing is complete
+    def close_window():
+        root.destroy()
+        messagebox.showinfo("Image", "Image processing complete!")
+
+    # Check if the progress bar is complete and close the window
+    def check_progress():
+        if progress_bar['value'] >= progress_bar['maximum']:
+            status_label.config(text="Processing complete.")
+            root.after(1000, close_window)
+        else:
+            root.after(500, check_progress)
+
+    root.after(500, check_progress)
     progress_bar.pack(pady=10)
 
     # Label for showing the processing status
@@ -120,12 +135,12 @@ def setup_gui_and_start(base_folder, roi_masks, average_distances, Aux_Met_Data,
     status_label.pack(pady=10)
 
     # Start the processing in a separate thread
-    start_args = (base_folder, roi_masks, average_distances, Aux_Met_Data, FLUX_Met_Data, Aux_Met_window, FLUX_Met_window, output_csv_path, emissivity, elevation, progress_bar, status_label, root)
+    start_args = (Aux_Met_Data, aux_met_window, FLUX_Met_Data, flux_met_window, sky_percent, emissivity_vf2, emissivity_target, elevation, win_transmittance, roi_masks, average_distances, base_folder, output_csv_path, progress_bar, status_label, root)
     start_processing_thread(*start_args)
 
     root.mainloop()
 
-def setup_gui_and_start_point(point_data_path, point_dist, Aux_Met_Data, FLUX_Met_Data, Aux_Met_window, FLUX_Met_window, output_csv_path, emissivity, elevation):
+def setup_gui_and_start_point(Aux_Met_Data, aux_met_window, FLUX_Met_Data, flux_met_window, sky_percent, emissivity_vf2, emissivity_target, elevation, win_transmittance, point_data_path, point_dist, output_csv_path):
     """
     Sets up the graphical user interface (GUI) and starts the point data processing in a separate thread.
 
@@ -135,14 +150,18 @@ def setup_gui_and_start_point(point_data_path, point_dist, Aux_Met_Data, FLUX_Me
     point data processing.
 
     Parameters:
+    Aux_Met_Data (pd.DataFrame): DataFrame containing preprocessed auxiliary meteorological data.
+    aux_met_window (int): Time window in minutes for searching auxiliary meteorological data.
+    FLUX_Met_Data (pd.DataFrame): DataFrame containing preprocessed FLUX meteorological data.
+    flux_met_window (int): Time window in minutes for searching FLUX meteorological data.
+    sky_percent (int): Percent of target's view factor that is composed of sky.
+    emissivity_vf2 (float): Emissivity of the dominant surrounding object other than sky.
+    emissivity_target (float): Emissivity value from the configuration.
+    elevation (float): Site elevation.
+    win_transmittance (float): The transmittance value of the enclosure window.
     point_data_path (str): Path to the CSV file containing point data.
     point_dist (float): Distance value for the point data.
-    Aux_Met_Data (pd.DataFrame): DataFrame containing auxiliary meteorological data.
-    FLUX_Met_Data (pd.DataFrame): DataFrame containing FLUX meteorological data.
-    Aux_Met_window (int): Time window in minutes for searching auxiliary meteorological data.
-    FLUX_Met_window (int): Time window in minutes for searching FLUX meteorological data.
     output_csv_path (str): Path to the output CSV file where the results will be saved.
-    emissivity (float): Emissivity value.
     """
     root = tk.Tk()
     root.title("Processing Point Data")
@@ -172,8 +191,9 @@ def setup_gui_and_start_point(point_data_path, point_dist, Aux_Met_Data, FLUX_Me
     # Function to process point data and update the progress bar
     def process_and_update_progress():
         try:
-            processed_df = process_and_export_corrected_point_data(output_csv_path, point_data_path, point_dist, Aux_Met_Data, FLUX_Met_Data, Aux_Met_window, FLUX_Met_window, emissivity, elevation)
+            processed_df = process_and_export_corrected_point_data(Aux_Met_Data, aux_met_window, FLUX_Met_Data, flux_met_window, sky_percent, emissivity_vf2, emissivity_target, elevation, win_transmittance, point_data_path, point_dist, output_csv_path)
             update_progress(processed_df)
+
         except Exception as e:
             print(f"Error during processing: {e}")
             status_label.config(text="Processing failed.")
@@ -194,6 +214,21 @@ def setup_gui_and_start_point(point_data_path, point_dist, Aux_Met_Data, FLUX_Me
 
     update_progress_bar()
 
+    # Function to close the window when processing is complete
+    def close_window():
+        root.destroy()
+        messagebox.showinfo("Point Data", "Point data processing complete!")
+
+    # Check if the progress bar is complete and close the window
+    def check_progress():
+        if progress_bar['value'] >= progress_bar['maximum']:
+            status_label.config(text="Processing complete.")
+            root.after(1000, close_window)
+        else:
+            root.after(500, check_progress)
+
+    root.after(500, check_progress)
+
     root.mainloop()
 
 # =============================================
@@ -213,23 +248,54 @@ def initialize_data_from_config_image(config_path):
     Returns:
     tuple: A tuple containing:
         - Aux_Met_Data (DataFrame or None): Preprocessed auxiliary meteorological data.
+        - aux_met_window (int): Time window for auxiliary meteorological data.
         - FLUX_Met_Data (DataFrame or None): Preprocessed FLUX meteorological data.
+        - flux_met_window (int): Time window for FLUX meteorological data.
+        - sky_percent (int): Percent of target's view factor that is composed of sky.
+        - emissivity_vf2 (float): Emissivity of the dominant surrounding object other than sky.
+        - emissivity_target (float): Emissivity value from the configuration.
+        - elevation (float): Site elevation.
+        - win_transmittance (float): The transmittance value of the enclosure window.
         - roi_masks (dict): ROI masks initialized from the configuration.
         - average_distances (dict): Average distances for each ROI.
-        - Aux_Met_window (int): Time window for auxiliary meteorological data.
-        - FLUX_Met_window (int): Time window for FLUX meteorological data.
         - base_folder (str): Base folder path from the configuration.
         - output_csv_path (str): Output CSV file path from the configuration.
-        - emissivity (float): Emissivity value from the configuration.
     """
-    print("Initializing process...")
+    print("Initializing image-based process...")
 
     # Load the configuration from the JSON file
     with open(config_path, 'r') as file:
         config = json.load(file)
 
-    # Define necessary columns for each dataset
-    aux_columns = ["TIMESTAMP_END", "T_air", "RH", "LW_IN"]
+    # Extract and validate config values
+    sky_percent = config.get('sky_percent')
+    emissivity_vf2 = config.get('emissivity_vf2')
+    emissivity_target = config.get('emissivity_target')
+    win_transmittance = config.get('win_transmittance')
+
+    # Validation
+    if sky_percent is None or not (0 <= sky_percent <= 100):
+        raise ValueError(f"Invalid 'sky_percent': {sky_percent}. It must be between 0 and 100.")
+
+    if emissivity_vf2 is None or not (0 <= emissivity_vf2 <= 1):
+        raise ValueError(f"Invalid 'emissivity_vf2': {emissivity_vf2}. It must be between 0 and 1.")
+
+    if emissivity_target is None or not (0 <= emissivity_target <= 1):
+        raise ValueError(f"Invalid 'emissivity_target': {emissivity_target}. It must be between 0 and 1.")
+
+    if win_transmittance is None or not (0 <= win_transmittance <= 1):
+        raise ValueError(f"Invalid 'win_transmittance': {win_transmittance}. It must be between 0 and 1.")
+
+    # Define necessary columns for auxiliary meteorological data
+    aux_columns = ["TIMESTAMP_END", "T_air", "RH", "LW_IN", "VF_2", "T_win"]
+
+    # Conditionally exclude columns
+    if sky_percent == 100 or emissivity_vf2 == 1:
+        aux_columns = [col for col in aux_columns if col != "VF_2"]
+    if win_transmittance == 1:
+        aux_columns = [col for col in aux_columns if col != "T_win"]
+
+    # FLUX dataset columns
     flux_columns = ["TIMESTAMP_END", "LW_IN"]
 
     # Load and preprocess auxiliary meteorological data
@@ -238,7 +304,7 @@ def initialize_data_from_config_image(config_path):
         Aux_Met_Data = pd.read_csv(config['aux_met_data_path'], usecols=lambda x: x in aux_columns)
         Aux_Met_Data = preprocess_dataframe(Aux_Met_Data)
 
-    # Load FLUX_Met_Data **only if LW_IN is missing from Aux_Met_Data**
+    # Load FLUX_Met_Data **only if LW_IN is missing from Aux_Met_Data
     FLUX_Met_Data = None
     if config.get('flux_met_data_path') and (Aux_Met_Data is None or 'LW_IN' not in Aux_Met_Data.columns):
         FLUX_Met_Data = pd.read_csv(config['flux_met_data_path'], usecols=lambda x: x in flux_columns)
@@ -248,13 +314,23 @@ def initialize_data_from_config_image(config_path):
 
     # Initialize ROI masks and distances
     roi_masks, average_distances = initialize_roi_masks_and_distances(
-        config['roi_path'], config['roi_dist_path'], config['first_image_path'], config['data_type']
-    )
+        config['roi_path'], config['roi_dist_path'], config['first_image_path'], config['img_dist_type'])
 
-    return (Aux_Met_Data, FLUX_Met_Data, roi_masks, average_distances,
-            config['Aux_Met_window'], config['FLUX_Met_window'],
-            config['base_folder'], config['output_csv_path'],
-            config['emissivity'], config['elevation'])
+    return (
+        Aux_Met_Data,
+        config.get('aux_met_window'),
+        FLUX_Met_Data,
+        config.get('flux_met_window'),
+        sky_percent,
+        emissivity_vf2,
+        config.get('emissivity_target'),
+        config.get('elevation'),
+        win_transmittance,
+        roi_masks,
+        average_distances,
+        config.get('base_folder'),
+        config.get('output_csv_path')
+    )
 
 def get_image_shape(image_path):
     """
@@ -339,19 +415,19 @@ def create_roi_masks(csv_path, image_shape, image_path):
             rois[label] = mask.astype(bool)  # Convert to boolean mask
     return rois
 
-def calculate_average_distances(distance_csv, roi_masks=None, data_type='pointcloud'):
+def calculate_average_distances(distance_csv, roi_masks=None, data_type='pixeldistance'):
     """
     Calculate or read the average distance for each ROI.
 
     Parameters:
     distance_csv (str): Path to the CSV file containing distances.
-    roi_masks (dict, optional): A dictionary containing masks for each ROI (used if data_type is 'pointcloud').
-    data_type (str): Type of data in the CSV file ('pointcloud' or 'average').
+    roi_masks (dict, optional): A dictionary containing masks for each ROI (used if data_type is 'pixeldistance').
+    data_type (str): Type of data in the CSV file ('pixeldistance' or 'average').
 
     Returns:
     dict: A dictionary with ROI labels as keys and their average distances as values.
     """
-    if data_type == 'pointcloud':
+    if data_type == 'pixeldistance':
         # Load the pixel distances from the CSV file
         pixel_distances = np.loadtxt(distance_csv, delimiter=',', encoding='utf-8-sig')
         
@@ -374,11 +450,11 @@ def calculate_average_distances(distance_csv, roi_masks=None, data_type='pointcl
         average_distances = df.set_index('label')['average_distance'].to_dict()
 
     else:
-        raise ValueError("data_type must be either 'pointcloud' or 'average'.")
+        raise ValueError("data_type must be either 'pixeldistance' or 'average'.")
 
     return average_distances
 
-def initialize_roi_masks_and_distances(roi_csv_path, distance_csv_path, image_path, data_type='pointcloud'):
+def initialize_roi_masks_and_distances(roi_csv_path, distance_csv_path, image_path, data_type='pixeldistance'):
     """
     Initialize ROI masks and calculate or read the average distances.
 
@@ -386,7 +462,7 @@ def initialize_roi_masks_and_distances(roi_csv_path, distance_csv_path, image_pa
     roi_csv_path (str): Path to the CSV file containing ROI information.
     distance_csv_path (str): Path to the CSV file containing distances.
     image_path (str): Path to the image file.
-    data_type (str): Type of data in the distance CSV file ('pointcloud' or 'average').
+    data_type (str): Type of data in the distance CSV file ('pixeldistance' or 'average').
 
     Returns:
     tuple: A tuple containing ROI masks and average distances.
@@ -552,6 +628,13 @@ def find_matching_logger_data(tiff_image_path, Aux_Met_Data, FLUX_Met_Data, Aux_
 
         # First check for 'sky_temp' in Aux_Met_Data
         file_data['sky_temp'] = closest_aux.get('sky_temp')
+        file_data['LW_IN'] = closest_aux.get('LW_IN')
+
+        # Optionally include VF_2 and T_win if they exist
+        if 'VF_2' in closest_aux:
+            file_data['VF_2'] = closest_aux['VF_2']
+        if 'T_win' in closest_aux:
+            file_data['T_win'] = closest_aux['T_win']
 
     # If 'sky_temp' is not in Aux_Met_Data, then check FLUX_Met_Data
     if (file_data.get('sky_temp') is None) and FLUX_Met_Data is not None and FLUX_Met_window is not None:
@@ -577,74 +660,117 @@ def find_matching_logger_data(tiff_image_path, Aux_Met_Data, FLUX_Met_Data, Aux_
 
     return file_data
 
-def correct_integer_image(integerImg, file_data, emiss):
+def correct_integer_image(integerImg, file_data, emissivity_target, sky_percent, emissivity_vf2, win_transmittance):
     """
     Correct an integer image using provided meteorological data.
 
     Parameters:
     integerImg (numpy.ndarray): Integer image data to be corrected.
-    file_data (dict): Dictionary containing meteorological data including 'skyTemp', 'tau', and 'T_air'.
-    emiss (float): Emissivity value used in correction.
+    file_data (dict): Dictionary containing meteorological data.
+    emissivity_target (float): Emissivity value of the object.
+    sky_percent (float): Percent view of sky (0–100).
+    emissivity_vf2 (float): Emissivity of surrounding objects.
+    win_transmittance (float): Window transmittance (0–1).
 
     Returns:
     tuple: Four corrected image datasets:
         - integerObj (standard correction)
+        - integerObj_twin1 (correction with twin = 1)
         - integerObj_tau1 (correction with tau = 1)
-        - integerObj_emiss1 (correction with emiss = 1)
+        - integerObj_emiss1 (correction with emissivity = 1)
     """
-    # Extract values from file_data
-    skyTemp = file_data['sky_temp']
     tau = file_data['tau']
     airT = file_data['T_air']
 
-    # Convert integer image to radiance
     integerImgSB = radiance_from_temperature(integerImg)
-    integerReflectSB = radiance_from_temperature(skyTemp)
     integerAtmSB = radiance_from_temperature(airT)
+    
+    # Handle reflected radiation
+    if sky_percent != 100:
+        vf2 = file_data['VF_2']
+        vf2_energy = radiance_from_temperature(vf2)
+        vf1_energy = file_data['LW_IN']
+        sky_frac = sky_percent / 100
+        integerReflectSB = (
+            sky_frac * vf1_energy +
+            (1 - sky_frac) * (emissivity_vf2 * vf2_energy + vf1_energy * (1 - emissivity_vf2))
+        )
+    else:
+        integerReflectSB = file_data['LW_IN']
 
-    # Constants
-    rEmiss = 1.0  # Assuming sky has emissivity of 1
+    if win_transmittance != 1:
+        twin = file_data['T_win']
+        integerWindowSB = radiance_from_temperature(twin)
 
-    # Standard Correction Calculation
-    integerObj = (1.0 / (emiss * tau)) * (
-        integerImgSB - tau * (1 - emiss) * rEmiss * integerReflectSB - (1 - tau) * integerAtmSB
+        integerObj = (
+            integerImgSB / (tau * win_transmittance * emissivity_target)
+            - (integerReflectSB * (1 - emissivity_target)) / emissivity_target
+            - (integerAtmSB * (1 - tau)) / (tau * emissivity_target)
+            - (integerWindowSB * (1 - win_transmittance)) / (tau * win_transmittance * emissivity_target)
+        )
+
+        integerObj_twin1 = (
+            integerImgSB / (tau * emissivity_target)
+            - (integerReflectSB * (1 - emissivity_target)) / emissivity_target
+            - (integerAtmSB * (1 - tau)) / (tau * emissivity_target)
+        )
+
+        integerObj_tau1 = (
+            integerImgSB / (win_transmittance * emissivity_target)
+            - (integerReflectSB * (1 - emissivity_target)) / emissivity_target
+            - (integerWindowSB * (1 - win_transmittance)) / (win_transmittance * emissivity_target)
+        )
+
+        integerObj_emiss1 = (
+            integerImgSB / (tau * win_transmittance)
+            - (integerAtmSB * (1 - tau)) / tau
+            - (integerWindowSB * (1 - win_transmittance)) / (tau * win_transmittance)
+        )
+
+    else:
+        integerObj = (
+            integerImgSB / (tau * emissivity_target)
+            - (integerReflectSB * (1 - emissivity_target)) / emissivity_target
+            - (integerAtmSB * (1 - tau)) / (tau * emissivity_target)
+        )
+
+        integerObj_twin1 = integerObj  # No difference when win_transmittance == 1
+
+        integerObj_tau1 = (
+            integerImgSB / emissivity_target
+            - (integerReflectSB * (1 - emissivity_target)) / emissivity_target
+        )
+
+        integerObj_emiss1 = (
+            integerImgSB / tau
+            - (integerAtmSB * (1 - tau)) / tau
+        )
+
+    # Convert all to temperature
+    return (
+        radiance_to_temp(integerObj),
+        radiance_to_temp(integerObj_twin1),
+        radiance_to_temp(integerObj_tau1),
+        radiance_to_temp(integerObj_emiss1)
     )
 
-    # Correction with tau = 1
-    integerObj_tau1 = (1.0 / (emiss * 1)) * (
-        integerImgSB - (1 - emiss) * rEmiss * integerReflectSB
-    )
-
-    # Correction with emiss = 1
-    integerObj_emiss1 = (1.0 / (tau)) * (
-        integerImgSB - (1 - tau) * integerAtmSB
-    )
-
-    # Convert all corrected radiances back to temperature
-    integerObj = radiance_to_temp(integerObj)
-    integerObj_tau1 = radiance_to_temp(integerObj_tau1)
-    integerObj_emiss1 = radiance_to_temp(integerObj_emiss1)
-
-    return integerObj, integerObj_tau1, integerObj_emiss1
-
-def process_and_export_corrected_roi_means(
-    tiff_image_path, roi_masks, average_distances, 
-    Aux_Met_Data, FLUX_Met_Data, Aux_Met_window, 
-    FLUX_Met_window, emiss, elevation
-):
+def process_and_export_corrected_roi_means(image_path, roi_masks, average_distances, Aux_Met_Data, FLUX_Met_Data, aux_met_window, flux_met_window, emissivity_target, elevation, sky_percent, emissivity_vf2, win_transmittance):
     """
     Process and export corrected ROI percentiles and mean for a TIFF image while retaining uncorrected values.
 
     Parameters:
-    tiff_image_path (str): Path to the TIFF image.
+    image_path (str): Path to the TIFF image.
     roi_masks (dict): Dictionary of ROI masks.
     average_distances (dict): Dictionary of average distances for each ROI.
     Aux_Met_Data (pd.DataFrame): DataFrame containing auxiliary meteorological data.
     FLUX_Met_Data (pd.DataFrame): DataFrame containing FLUX meteorological data.
-    Aux_Met_window (int): Time window in minutes for searching auxiliary meteorological data.
-    FLUX_Met_window (int): Time window in minutes for searching FLUX meteorological data.
-    emiss (float): Emissivity value.
-    elevation (float): Elevation value.
+    aux_met_window (int): Time window in minutes for searching auxiliary meteorological data.
+    flux_met_window (int): Time window in minutes for searching FLUX meteorological data.
+    emissivity_target (float): Emissivity value of target object.
+    elevation (float): Site elevation value.
+    sky_percent (int): Percent of target's view factor that is composed of sky.
+    emissivity_vf2 (float): Emissivity of the dominant surrounding object other than sky.
+    win_transmittance (float): The transmittance value of the enclosure window.
 
     Returns:
     OrderedDict: Dictionary containing processed data, structured correctly with all ROI 
@@ -652,61 +778,127 @@ def process_and_export_corrected_roi_means(
     """
     try:
         # 1. Extract necessary information from the filename and get file_data
-        file_data = find_matching_logger_data(tiff_image_path, Aux_Met_Data, FLUX_Met_Data, Aux_Met_window, FLUX_Met_window, elevation)
+        file_data = find_matching_logger_data(image_path, Aux_Met_Data, FLUX_Met_Data, aux_met_window, flux_met_window, elevation)
+        
+        #Validate required fields are present
+        required_fields = ['T_air', 'RH', 'sky_temp', 'LW_IN','rho_v']
+
+        if sky_percent != 100:
+            required_fields.append('VF_2')
+        if win_transmittance != 1:
+            required_fields.append('T_win')
+
+        missing_fields = [field for field in required_fields if file_data.get(field) is None]
+
+        if missing_fields:
+            print(f"Skipping {image_path} due to missing fields: {', '.join(missing_fields)}")
+            return None
 
         # 2. Extract mean and percentiles for each ROI from the TIFF image
-        roi_stats = calculate_roi_means_for_tiff(tiff_image_path, roi_masks)
+        roi_stats = calculate_roi_means_for_tiff(image_path, roi_masks)
 
         # 3. Define the order of stored values (mean + percentiles)
         percentiles_list = ["mean", 1, 5, 10, 25, 50, 75, 90, 95, 99]
 
         # 4. Initialize an ordered dictionary for structured output
         ordered_file_data = OrderedDict(file_data)  # Preserve initial metadata order
-
+        
+        def sem_or_nan(x):
+            x = np.asarray(x, dtype=float)
+            return (np.std(x, ddof=1) / np.sqrt(x.size)) if x.size > 1 else np.nan
+        
         # 5. Process and structure the ROI values
         for label in sorted(roi_stats.keys()):  # Ensure ROIs are processed in order
             dist = average_distances.get(label)
-
-            if file_data['rho_v'] is not None and dist is not None:
-                file_data['tau'] = atm_trans(dist, file_data['rho_v'])
-                ordered_file_data['tau'] = file_data['tau']
-
+            rho_v = file_data.get('rho_v')
+        
+            if dist is None:
+                raise ValueError(f"Missing distance for ROI label '{label}'")
+        
+            file_data['tau'] = atm_trans(dist, rho_v)
+            ordered_file_data['tau'] = file_data['tau']
+        
+            # Precompute corrected arrays if we have raw values
+            has_values = ("values" in roi_stats[label]) and (len(roi_stats[label]["values"]) > 0)
+            raw_vals = np.asarray(roi_stats[label]["values"], dtype=float) if has_values else None
+        
+            if has_values:
+                corr_full, corr_tau1, corr_twin1, corr_emiss1 = [], [], [], []
+                for v in raw_vals:
+                    c_full, c_twin1, c_tau1, c_emiss1 = correct_integer_image(
+                        v, file_data, emissivity_target, sky_percent, emissivity_vf2, win_transmittance
+                    )
+                    corr_full.append(c_full)
+                    corr_tau1.append(c_tau1)
+                    corr_twin1.append(c_twin1)
+                    corr_emiss1.append(c_emiss1)
+        
+                corr_full   = np.asarray(corr_full,   dtype=float)
+                corr_tau1   = np.asarray(corr_tau1,   dtype=float)
+                corr_twin1  = np.asarray(corr_twin1,  dtype=float)
+                corr_emiss1 = np.asarray(corr_emiss1, dtype=float)
+        
             for perc in percentiles_list:  # Include both mean and percentiles
                 key = f"p{perc}" if perc != "mean" else "mean"
-                value = roi_stats[label][key]  # Extract mean or percentile value
-
-                # Store uncorrected first
+                value = roi_stats[label][key]  # scalar mean or percentile
+        
+                # --- Uncorrected scalar and its SEM (mean only) ---
                 ordered_file_data[f"{label}_{key}_uncorrected"] = value
-
-                # Get four corrected outputs from correct_integer_image
-                corrected_value, corrected_value_tau1, corrected_value_emiss1 = correct_integer_image(
-                    value, file_data, emiss
+                if key == "mean" and has_values:
+                    ordered_file_data[f"{label}_{key}_uncorrected_sem"] = sem_or_nan(raw_vals)
+        
+                # --- Correct the scalar aggregate (matches your existing outputs) ---
+                corrected_value, corrected_value_twin1, corrected_value_tau1, corrected_value_emiss1 = correct_integer_image(
+                    value, file_data, emissivity_target, sky_percent, emissivity_vf2, win_transmittance
                 )
-
-                # Store corrected values in the correct order
+        
+                # Fully corrected mean + SEM written back-to-back
                 ordered_file_data[f"{label}_{key}_fully_corrected"] = corrected_value
+                if key == "mean" and has_values:
+                    ordered_file_data[f"{label}_{key}_fully_corrected_sem"] = sem_or_nan(corr_full)
+        
+                # tau1 mean + SEM
                 ordered_file_data[f"{label}_{key}_tau1"] = corrected_value_tau1
-                ordered_file_data[f"{label}_{key}_objemiss1"] = corrected_value_emiss1
+                if key == "mean" and has_values:
+                    ordered_file_data[f"{label}_{key}_tau1_sem"] = sem_or_nan(corr_tau1)
+        
+                # twin1 mean + SEM
+                ordered_file_data[f"{label}_{key}_twin1"] = corrected_value_twin1
+                if key == "mean" and has_values:
+                    ordered_file_data[f"{label}_{key}_twin1_sem"] = sem_or_nan(corr_twin1)
+        
+                # emiss1 mean + SEM
+                ordered_file_data[f"{label}_{key}_emiss1"] = corrected_value_emiss1
+                if key == "mean" and has_values:
+                    ordered_file_data[f"{label}_{key}_emiss1_sem"] = sem_or_nan(corr_emiss1)
 
         return ordered_file_data  # Returns an OrderedDict to maintain structured output
 
     except Exception as e:
-        print(f"Error processing {tiff_image_path}: {e}")
+        print(f"Error processing {image_path}: {e}")
         return None
 
-def process_images_in_folders(base_folder, roi_masks, average_distances, Aux_Met_Data, FLUX_Met_Data, Aux_Met_window, FLUX_Met_window, output_csv_path, emissivity, elevation, progress_bar, status_label, root):
+def process_images_in_folders(Aux_Met_Data, aux_met_window, FLUX_Met_Data, flux_met_window, sky_percent, emissivity_vf2, emissivity_target, elevation, win_transmittance, roi_masks, average_distances, base_folder, output_csv_path, progress_bar, status_label, root):
     """
     Process images in folders and export the results to a CSV file with a progress bar and time tracking.
 
     Parameters:
-    base_folder (str): Base folder containing year and month subfolders.
-    roi_masks (dict): Dictionary of ROI masks.
-    average_distances (dict): Dictionary of average distances for each ROI.
-    Aux_Met_Data (pd.DataFrame): DataFrame containing auxiliary meteorological data.
-    FLUX_Met_Data (pd.DataFrame): DataFrame containing FLUX meteorological data.
-    Aux_Met_window (int): Time window in minutes for searching auxiliary meteorological data.
-    FLUX_Met_window (int): Time window in minutes for searching FLUX meteorological data.
-    output_csv_path (str): Path to the output CSV file.
+    Aux_Met_Data (pd.DataFrame): DataFrame containing preprocessed auxiliary meteorological data.
+    aux_met_window (int): Time window in minutes for searching auxiliary meteorological data.
+    FLUX_Met_Data (pd.DataFrame): DataFrame containing preprocessed FLUX meteorological data.
+    flux_met_window (int): Time window in minutes for searching FLUX meteorological data.
+    sky_percent (int): Percent of target's view factor that is composed of sky.
+    emissivity_vf2 (float): Emissivity of the dominant surrounding object other than sky.
+    emissivity_target (float): Emissivity value from the configuration.
+    elevation (float): Site elevation.
+    win_transmittance (float): The transmittance value of the enclosure window.
+    roi_masks (dict): A dictionary of Region of Interest (ROI) masks.
+    average_distances (dict): A dictionary of average distances for each ROI.
+    base_folder (str): The base folder path where the images are located.
+    output_csv_path (str): Path to the output CSV file where the results will be saved.
+    progress_bar (tk.Progressbar): GUI progress bar.
+    status_label (tk.Label): GUI status label.
+    root (tk.Tk): Tkinter main window.
 
     Returns:
     pd.DataFrame: DataFrame containing processed data.
@@ -737,9 +929,9 @@ def process_images_in_folders(base_folder, roi_masks, average_distances, Aux_Met
             for image_file in os.listdir(month_path):
                 if image_file.lower().endswith('.tiff') and not image_file.startswith('._'):  # Skip hidden macOS metadata files
                     image_path = os.path.join(month_path, image_file)
-                    file_data = process_and_export_corrected_roi_means(image_path, roi_masks, average_distances, Aux_Met_Data, FLUX_Met_Data, Aux_Met_window, FLUX_Met_window, emissivity, elevation)
+                    file_data = process_and_export_corrected_roi_means(image_path, roi_masks, average_distances, Aux_Met_Data, FLUX_Met_Data, aux_met_window, flux_met_window, emissivity_target, elevation, sky_percent, emissivity_vf2, win_transmittance)
                     if file_data is None:
-                        print("Skipping this TIFF due to processing error.")
+                        #print("Skipping this TIFF due to processing error.")
                         continue
                     file_data_list.append(file_data)
 
@@ -753,7 +945,11 @@ def process_images_in_folders(base_folder, roi_masks, average_distances, Aux_Met
     result_df = pd.DataFrame(file_data_list)
 
     # Sort the DataFrame by 'Timestamp' in ascending order
-    result_df = result_df.sort_values(by='Timestamp')
+    if not result_df.empty and 'Timestamp' in result_df.columns:
+        result_df = result_df.sort_values(by='Timestamp')
+    else:
+        print("Warning: result_df is empty or missing 'Timestamp' column. Skipping sort.")
+
 
     # Export the DataFrame to a CSV file
     result_df.to_csv(output_csv_path, index=False)
@@ -784,22 +980,54 @@ def initialize_data_from_config_point(config_path):
     Returns:
     tuple: A tuple containing:
         - Aux_Met_Data (DataFrame or None): Preprocessed auxiliary meteorological data.
-        - FLUX_Met_Data (DataFrame or None): Preprocessed FLUX meteorological data (if necessary).
-        - Aux_Met_window (int): Time window for auxiliary meteorological data.
-        - FLUX_Met_window (int): Time window for FLUX meteorological data.
+        - aux_met_window (int): Time window for auxiliary meteorological data.
+        - FLUX_Met_Data (DataFrame or None): Preprocessed FLUX meteorological data.
+        - flux_met_window (int): Time window for FLUX meteorological data.
+        - sky_percent (int): Percent of target's view factor that is composed of sky.
+        - emissivity_vf2 (float): Emissivity of the dominant surrounding object other than sky.
+        - emissivity_target (float): Emissivity value from the configuration.
+        - elevation (float): Site elevation.
+        - win_transmittance (float): The transmittance value of the enclosure window.
+        - point_data_path (str): Path to the CSV file containing point data.
         - point_dist (float): Distance value for ROI.
         - output_csv_path (str): Output CSV file path from the configuration.
-        - emissivity (float): Emissivity value from the configuration.
-        - point_data_path (str): Path to the CSV file containing point data.
     """
-    print("Initializing process...")
+    print("Initializing point-based process...")
 
     # Load the configuration from the JSON file
     with open(config_path, 'r') as file:
         config = json.load(file)
 
-    # Define necessary columns for each dataset
-    aux_columns = ["TIMESTAMP_END", "T_air", "RH", "LW_IN"]
+    # Extract and validate key physical parameters
+    emissivity_target = config.get('emissivity_target')
+    elevation = config.get('elevation')
+    sky_percent = config.get('sky_percent')
+    emissivity_vf2 = config.get('emissivity_vf2')
+    win_transmittance = config.get('win_transmittance')
+
+    # Validation
+    if sky_percent is None or not (0 <= sky_percent <= 100):
+        raise ValueError(f"Invalid 'sky_percent': {sky_percent}. It must be between 0 and 100.")
+
+    if emissivity_vf2 is None or not (0 <= emissivity_vf2 <= 1):
+        raise ValueError(f"Invalid 'emissivity_vf2': {emissivity_vf2}. It must be between 0 and 1.")
+
+    if emissivity_target is None or not (0 <= emissivity_target <= 1):
+        raise ValueError(f"Invalid 'emissivity_target': {emissivity_target}. It must be between 0 and 1.")
+
+    if win_transmittance is None or not (0 <= win_transmittance <= 1):
+        raise ValueError(f"Invalid 'win_transmittance': {win_transmittance}. It must be between 0 and 1.")
+
+    # Define necessary columns for auxiliary meteorological data
+    aux_columns = ["TIMESTAMP_END", "T_air", "RH", "LW_IN", "VF_2", "T_win"]
+
+    # Conditionally exclude columns
+    if sky_percent == 100 or emissivity_vf2 == 1:
+        aux_columns = [col for col in aux_columns if col != "VF_2"]
+    if win_transmittance == 1:
+        aux_columns = [col for col in aux_columns if col != "T_win"]
+
+    # FLUX dataset columns
     flux_columns = ["TIMESTAMP_END", "LW_IN"]
 
     # Load and preprocess auxiliary meteorological data
@@ -808,7 +1036,7 @@ def initialize_data_from_config_point(config_path):
         Aux_Met_Data = pd.read_csv(config['aux_met_data_path'], usecols=lambda x: x in aux_columns)
         Aux_Met_Data = preprocess_dataframe(Aux_Met_Data)
 
-    # Load FLUX_Met_Data **only if LW_IN is missing from Aux_Met_Data**
+    # Load FLUX_Met_Data **only if LW_IN is missing from Aux_Met_Data
     FLUX_Met_Data = None
     if config.get('flux_met_data_path') and (Aux_Met_Data is None or 'LW_IN' not in Aux_Met_Data.columns):
         FLUX_Met_Data = pd.read_csv(config['flux_met_data_path'], usecols=lambda x: x in flux_columns)
@@ -816,60 +1044,116 @@ def initialize_data_from_config_point(config_path):
     else:
         print("Skipping FLUX_Met_Data as LW_IN is already present in Aux_Met_Data.")
 
-    return (Aux_Met_Data, FLUX_Met_Data,
-            config['Aux_Met_window'], config['FLUX_Met_window'],
-            config['point_dist'], config['output_csv_path'],
-            config['emissivity'], config['point_data_path'], config['elevation'])
+    return (
+        Aux_Met_Data,
+        config['aux_met_window'],
+        FLUX_Met_Data,
+        config['flux_met_window'],
+        sky_percent,
+        emissivity_vf2,
+        emissivity_target,
+        elevation,
+        win_transmittance,
+        config['point_data_path'],
+        config['point_dist'],
+        config['output_csv_path']
+    )
 
-def correct_point_data(point_data, file_data, emiss):
+def correct_point_data(point_value, file_data, emissivity_target, sky_percent, emissivity_vf2, win_transmittance):
     """
     Correct point data using provided meteorological data.
 
     Parameters:
-    point_data (float): Point data value to be corrected.
-    file_data (dict): Dictionary containing meteorological data including 'sky_temp', 'tau', and 'T_air'.
-    emiss (float): Emissivity value.
+    point_value (float): Point data value to be corrected.
+    file_data (dict): Dictionary containing meteorological data.
+    emissivity_target (float): Emissivity value of the object.
+    sky_percent (float): Percent view of sky (0–100).
+    emissivity_vf2 (float): Emissivity of surrounding objects.
+    win_transmittance (float): Window transmittance (0–1).
 
     Returns:
     tuple: Four corrected point data values:
         - correctedPoint (standard correction)
+        - correctedPoint_twin1 (correction with twin = 1)
         - correctedPoint_tau1 (correction with tau = 1)
         - correctedPoint_emiss1 (correction with emiss = 1)
     """
     # Extract values from file_data
-    skyTemp = file_data['sky_temp']
     tau = file_data['tau']
     airT = file_data['T_air']
 
     # Convert point data to radiance
-    pointRadiance = radiance_from_temperature(point_data)
-    skyRadiance = radiance_from_temperature(skyTemp)
+    pointRadiance = radiance_from_temperature(point_value)
     atmRadiance = radiance_from_temperature(airT)
 
-    # Constants
-    rEmiss = 1.0  # Assuming sky has emissivity of 1
+    # Handle reflected radiation
+    if sky_percent != 100:
+        vf2 = file_data['VF_2']
+        vf2_energy = radiance_from_temperature(vf2)
+        vf1_energy = file_data['LW_IN']
+        sky_frac = sky_percent / 100
+        reflRadiance = (
+            sky_frac * vf1_energy +
+            (1 - sky_frac) * (emissivity_vf2 * vf2_energy + vf1_energy * (1 - emissivity_vf2))
+        )
+    else:
+        reflRadiance = file_data['LW_IN']
 
-    # Standard Correction Calculation
-    correctedPoint = (1.0 / (emiss * tau)) * (
-        pointRadiance - tau * (1 - emiss) * rEmiss * skyRadiance - (1 - tau) * atmRadiance
+    if win_transmittance != 1:
+        twin = file_data['T_win']
+        winRadiance = radiance_from_temperature(twin)
+
+        correctedPoint = (
+            pointRadiance / (tau * win_transmittance * emissivity_target)
+            - (reflRadiance * (1 - emissivity_target)) / emissivity_target
+            - (atmRadiance * (1 - tau)) / (tau * emissivity_target)
+            - (winRadiance * (1 - win_transmittance)) / (tau * win_transmittance * emissivity_target)
+        )
+
+        correctedPoint_twin1 = (
+            pointRadiance / (tau * emissivity_target)
+            - (reflRadiance * (1 - emissivity_target)) / emissivity_target
+            - (atmRadiance * (1 - tau)) / (tau * emissivity_target)
+        )
+
+        correctedPoint_tau1 = (
+            pointRadiance / (win_transmittance * emissivity_target)
+            - (reflRadiance * (1 - emissivity_target)) / emissivity_target
+            - (winRadiance * (1 - win_transmittance)) / (win_transmittance * emissivity_target)
+        )
+
+        correctedPoint_emiss1 = (
+            pointRadiance / (tau * win_transmittance)
+            - (atmRadiance * (1 - tau)) / tau
+            - (winRadiance * (1 - win_transmittance)) / (tau * win_transmittance)
+        )
+
+    else:
+        correctedPoint = (
+            pointRadiance / (tau * emissivity_target)
+            - (reflRadiance * (1 - emissivity_target)) / emissivity_target
+            - (atmRadiance * (1 - tau)) / (tau * emissivity_target)
+        )
+
+        correctedPoint_twin1 = correctedPoint  # No difference when win_transmittance == 1
+
+        correctedPoint_tau1 = (
+            pointRadiance / emissivity_target
+            - (reflRadiance * (1 - emissivity_target)) / emissivity_target
+        )
+
+        correctedPoint_emiss1 = (
+            pointRadiance / tau
+            - (atmRadiance * (1 - tau)) / tau
+        )
+
+    # Convert all to temperature
+    return (
+        radiance_to_temp(correctedPoint),
+        radiance_to_temp(correctedPoint_twin1),
+        radiance_to_temp(correctedPoint_tau1),
+        radiance_to_temp(correctedPoint_emiss1)
     )
-
-    # Correction with tau = 1
-    correctedPoint_tau1 = (1.0 / (emiss)) * (
-        pointRadiance - (1 - emiss) * rEmiss * skyRadiance
-    )
-
-    # Correction with emiss = 1
-    correctedPoint_emiss1 = (1.0 / (tau)) * (
-        pointRadiance - (1 - tau) * atmRadiance
-    )
-
-    # Convert all corrected radiances back to temperature
-    correctedPoint = radiance_to_temp(correctedPoint)
-    correctedPoint_tau1 = radiance_to_temp(correctedPoint_tau1)
-    correctedPoint_emiss1 = radiance_to_temp(correctedPoint_emiss1)
-
-    return correctedPoint, correctedPoint_tau1, correctedPoint_emiss1
 
 def find_closest_row_point(df, timestamp, time_window):
     """
@@ -917,27 +1201,32 @@ def find_matching_logger_data_point(timestamp, Aux_Met_Data, FLUX_Met_Data, Aux_
     dict: Dictionary containing extracted data.
     """
 
-    #print(f"Finding matching data for timestamp: {timestamp}")
     timestamp_dt = pd.to_datetime(timestamp, format="%m/%d/%y %H:%M")
     time_window_td = pd.Timedelta(minutes=Aux_Met_window)
         
     # Find the closest row in Aux_Met_Data
     closest_aux = find_closest_row_point(Aux_Met_Data, timestamp_dt, time_window_td)
-    #print(f"Found Aux Met row: {closest_aux}")
 
-        # Initialize the file_data dictionary with common data
+    # Initialize the file_data dictionary with common data
     file_data = {
                 'Timestamp': timestamp}
 
-        # Include 'T_air' and 'RH' from closest_aux
+    # Include 'T_air' and 'RH' from closest_aux
     if closest_aux is not None:
-            file_data['T_air'] = closest_aux.get('T_air')
-            file_data['RH'] = closest_aux.get('RH')
+        file_data['T_air'] = closest_aux.get('T_air')
+        file_data['RH'] = closest_aux.get('RH')
 
-            # First check for 'sky_temp' in Aux_Met_Data
-            file_data['sky_temp'] = closest_aux.get('sky_temp')
+        # First check for 'sky_temp' in Aux_Met_Data
+        file_data['sky_temp'] = closest_aux.get('sky_temp')
+        file_data['LW_IN'] = closest_aux.get('LW_IN')
 
-        # If 'sky_temp' is not in Aux_Met_Data, then check FLUX_Met_Data
+        # Optionally include VF_2 and T_win if they exist
+        if 'VF_2' in closest_aux:
+            file_data['VF_2'] = closest_aux['VF_2']
+        if 'T_win' in closest_aux:
+            file_data['T_win'] = closest_aux['T_win']
+
+    # If 'sky_temp' is not in Aux_Met_Data, then check FLUX_Met_Data
     if (file_data.get('sky_temp') is None) and FLUX_Met_Data is not None and FLUX_Met_window is not None:
             closest_flux = find_closest_row_point(FLUX_Met_Data, timestamp_dt, pd.Timedelta(minutes=FLUX_Met_window))
             if closest_flux is not None:
@@ -948,31 +1237,35 @@ def find_matching_logger_data_point(timestamp, Aux_Met_Data, FLUX_Met_Data, Aux_
     RH = file_data.get('RH')
 
     if T_air is not None and RH is not None:
-            if isinstance(T_air, pd.Series):
-                T_air = T_air.iloc[0]  # Get the first value if it's a Series
-            if isinstance(RH, pd.Series):
-                RH = RH.iloc[0]  # Get the first value if it's a Series
-            P = pressure_at_elevation(elevation)
-            file_data['rho_v'] = vapor_density(T_air, RH, P)
+        if isinstance(T_air, pd.Series):
+            T_air = T_air.iloc[0]  # Get the first value if it's a Series
+        if isinstance(RH, pd.Series):
+            RH = RH.iloc[0]  # Get the first value if it's a Series
+        P = pressure_at_elevation(elevation)
+        file_data['rho_v'] = vapor_density(T_air, RH, P)
     else:
-            file_data['rho_v'] = None
+        file_data['rho_v'] = None
 
 
     return file_data
 
-def process_and_export_corrected_point_data(output_csv_path, point_data_path, point_dist, Aux_Met_Data, FLUX_Met_Data, Aux_Met_window, FLUX_Met_window, emissivity, elevation):
+def process_and_export_corrected_point_data(Aux_Met_Data, aux_met_window, FLUX_Met_Data, flux_met_window, sky_percent, emissivity_vf2, emissivity_target, elevation, win_transmittance, point_data_path, point_dist, output_csv_path):
     """
     Process and export corrected point data, including meteorological values.
 
     Parameters:
-    output_csv_path (str): Path to store the final processed CSV file.
+    Aux_Met_Data (pd.DataFrame): DataFrame containing preprocessed auxiliary meteorological data.
+    aux_met_window (int): Time window in minutes for searching auxiliary meteorological data.
+    FLUX_Met_Data (pd.DataFrame): DataFrame containing preprocessed FLUX meteorological data.
+    flux_met_window (int): Time window in minutes for searching FLUX meteorological data.
+    sky_percent (int): Percent of target's view factor that is composed of sky.
+    emissivity_vf2 (float): Emissivity of the dominant surrounding object other than sky.
+    emissivity_target (float): Emissivity value from the configuration.
+    elevation (float): Site elevation.
+    win_transmittance (float): The transmittance value of the enclosure window.
     point_data_path (str): Path to the CSV file containing point data.
     point_dist (float): Distance value for the point data.
-    Aux_Met_Data (pd.DataFrame): DataFrame containing auxiliary meteorological data.
-    FLUX_Met_Data (pd.DataFrame): DataFrame containing FLUX meteorological data.
-    Aux_Met_window (int): Time window in minutes for searching auxiliary meteorological data.
-    FLUX_Met_window (int): Time window in minutes for searching FLUX data.
-    emissivity (float): Emissivity value.
+    output_csv_path (str): Path to the output CSV file where the results will be saved.
 
     Returns:
     pd.DataFrame: DataFrame containing processed data, including meteorological data and corrected point values.
@@ -994,35 +1287,49 @@ def process_and_export_corrected_point_data(output_csv_path, point_data_path, po
             point_value = row['temp_value']
 
             # Extract necessary information from the file_data
-            file_data = find_matching_logger_data_point(timestamp, Aux_Met_Data, FLUX_Met_Data, Aux_Met_window, FLUX_Met_window, elevation)
-            if file_data is None:
-                print(f"Skipping timestamp {timestamp} due to error in finding matching logger data.")
-                continue
+            file_data = find_matching_logger_data_point(timestamp, Aux_Met_Data, FLUX_Met_Data, aux_met_window, flux_met_window, elevation)
+            
+            #Validate required fields are present
+            required_fields = ['T_air', 'RH', 'sky_temp', 'LW_IN','rho_v']
+
+            if sky_percent != 100:
+                required_fields.append('VF_2')
+            if win_transmittance != 1:
+                required_fields.append('T_win')
+
+            missing_fields = [field for field in required_fields if file_data.get(field) is None]
+            if missing_fields:
+                print(f"Skipping {image_path} due to missing fields: {', '.join(missing_fields)}")
+                return None
 
             # Calculate tau using the distance
-            if file_data['rho_v'] is not None and point_dist is not None:
-                file_data['tau'] = atm_trans(point_dist, file_data['rho_v'])
+            rho_v = file_data.get('rho_v')
+            if point_dist is None:
+                raise ValueError(f"Missing distance value 'point_dist' for processing.")
+
+            file_data['tau'] = atm_trans(point_dist, rho_v)
 
             try:
                 # Get four corrected outputs from correct_point_data
-                corrected_value, corrected_value_tau1, corrected_value_emiss1 = correct_point_data(point_value, file_data, emissivity)
+                corrected_value, corrected_value_twin1, corrected_value_tau1, corrected_value_emiss1 = correct_point_data(point_value, file_data, emissivity_target, sky_percent, emissivity_vf2, win_transmittance)
 
-                # Append corrected and uncorrected data, ensuring meteorological data comes first
-                processed_data.append({
-                    'timestamp': timestamp,
-                    'T_air': file_data.get('T_air', None),
-                    'RH': file_data.get('RH', None),
-                    'sky_temp': file_data.get('sky_temp', None),
-                    'LW_IN': file_data.get('LW_IN', None),
-                    'rho_v': file_data.get('rho_v', None),
-                    'tau': file_data.get('tau', None),
+                # Initialize with timestamp first
+                data_entry = OrderedDict()
 
-                    'temp_value_uncorrected': point_value,
-                    'temp_value_corrected': corrected_value,
-                    'temp_value_tau1': corrected_value_tau1,
-                    'temp_value_objemiss1': corrected_value_emiss1,
-                    #'temp_value_noReflect': corrected_value_noReflect
-                })
+                # Add all file_data entries
+                for key, value in file_data.items():
+                    data_entry[key] = value
+
+                # Add corrected temperature values
+                data_entry['temp_value_uncorrected'] = point_value
+                data_entry['temp_value_fully_corrected'] = corrected_value
+                data_entry['temp_value_tau1'] = corrected_value_tau1
+                data_entry['temp_value_twin1'] = corrected_value_twin1
+                data_entry['temp_value_emiss1'] = corrected_value_emiss1
+
+                # Append to the list
+                processed_data.append(data_entry)
+
             except Exception as err:
                 print(f"There was an exception correcting point data: {err}")
                 continue
@@ -1030,16 +1337,9 @@ def process_and_export_corrected_point_data(output_csv_path, point_data_path, po
         # Convert the list of dictionaries to a DataFrame
         result_df = pd.DataFrame(processed_data)
 
-        # Ensure correct column order
-        column_order = [
-            'timestamp', 'T_air', 'RH', 'sky_temp', 'LW_IN', 'rho_v', 'tau',
-            'temp_value_uncorrected', 'temp_value_corrected', 
-            'temp_value_tau1', 'temp_value_objemiss1', 'temp_value_noReflect'
-        ]
-        result_df = result_df[column_order]
-
         # Save to CSV
         result_df.to_csv(output_csv_path, index=False)
+
         # Record the end time
         end_time = time.time()
 
@@ -1126,7 +1426,7 @@ def pressure_at_elevation(h):
 
 def vapor_density(T_air, RH, P):
     """
-    Calculate actual vapor density given air temperature and relative humidity.
+    Calculate actual vapor density given air temperature, relative humidity, and pressure.
 
     Parameters:
     T_air (float): Air temperature in Celsius

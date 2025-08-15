@@ -802,35 +802,75 @@ def process_and_export_corrected_roi_means(image_path, roi_masks, average_distan
 
         # 4. Initialize an ordered dictionary for structured output
         ordered_file_data = OrderedDict(file_data)  # Preserve initial metadata order
-
+        
+        def sem_or_nan(x):
+            x = np.asarray(x, dtype=float)
+            return (np.std(x, ddof=1) / np.sqrt(x.size)) if x.size > 1 else np.nan
+        
         # 5. Process and structure the ROI values
         for label in sorted(roi_stats.keys()):  # Ensure ROIs are processed in order
             dist = average_distances.get(label)
-
             rho_v = file_data.get('rho_v')
+        
             if dist is None:
                 raise ValueError(f"Missing distance for ROI label '{label}'")
-
+        
             file_data['tau'] = atm_trans(dist, rho_v)
             ordered_file_data['tau'] = file_data['tau']
-
+        
+            # Precompute corrected arrays if we have raw values
+            has_values = ("values" in roi_stats[label]) and (len(roi_stats[label]["values"]) > 0)
+            raw_vals = np.asarray(roi_stats[label]["values"], dtype=float) if has_values else None
+        
+            if has_values:
+                corr_full, corr_tau1, corr_twin1, corr_emiss1 = [], [], [], []
+                for v in raw_vals:
+                    c_full, c_twin1, c_tau1, c_emiss1 = correct_integer_image(
+                        v, file_data, emissivity_target, sky_percent, emissivity_vf2, win_transmittance
+                    )
+                    corr_full.append(c_full)
+                    corr_tau1.append(c_tau1)
+                    corr_twin1.append(c_twin1)
+                    corr_emiss1.append(c_emiss1)
+        
+                corr_full   = np.asarray(corr_full,   dtype=float)
+                corr_tau1   = np.asarray(corr_tau1,   dtype=float)
+                corr_twin1  = np.asarray(corr_twin1,  dtype=float)
+                corr_emiss1 = np.asarray(corr_emiss1, dtype=float)
+        
             for perc in percentiles_list:  # Include both mean and percentiles
                 key = f"p{perc}" if perc != "mean" else "mean"
-                value = roi_stats[label][key]  # Extract mean or percentile value
-
-                # Store uncorrected first
+                value = roi_stats[label][key]  # scalar mean or percentile
+        
+                # --- Uncorrected scalar and its SEM (mean only) ---
                 ordered_file_data[f"{label}_{key}_uncorrected"] = value
-
-                # Get four corrected outputs from correct_integer_image
+                if key == "mean" and has_values:
+                    ordered_file_data[f"{label}_{key}_uncorrected_sem"] = sem_or_nan(raw_vals)
+        
+                # --- Correct the scalar aggregate (matches your existing outputs) ---
                 corrected_value, corrected_value_twin1, corrected_value_tau1, corrected_value_emiss1 = correct_integer_image(
                     value, file_data, emissivity_target, sky_percent, emissivity_vf2, win_transmittance
                 )
-
-                # Store corrected values in the correct order
+        
+                # Fully corrected mean + SEM written back-to-back
                 ordered_file_data[f"{label}_{key}_fully_corrected"] = corrected_value
+                if key == "mean" and has_values:
+                    ordered_file_data[f"{label}_{key}_fully_corrected_sem"] = sem_or_nan(corr_full)
+        
+                # tau1 mean + SEM
                 ordered_file_data[f"{label}_{key}_tau1"] = corrected_value_tau1
+                if key == "mean" and has_values:
+                    ordered_file_data[f"{label}_{key}_tau1_sem"] = sem_or_nan(corr_tau1)
+        
+                # twin1 mean + SEM
                 ordered_file_data[f"{label}_{key}_twin1"] = corrected_value_twin1
+                if key == "mean" and has_values:
+                    ordered_file_data[f"{label}_{key}_twin1_sem"] = sem_or_nan(corr_twin1)
+        
+                # emiss1 mean + SEM
                 ordered_file_data[f"{label}_{key}_emiss1"] = corrected_value_emiss1
+                if key == "mean" and has_values:
+                    ordered_file_data[f"{label}_{key}_emiss1_sem"] = sem_or_nan(corr_emiss1)
 
         return ordered_file_data  # Returns an OrderedDict to maintain structured output
 

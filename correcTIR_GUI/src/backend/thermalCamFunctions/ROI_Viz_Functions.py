@@ -108,190 +108,367 @@ def save_thermal_image(tiff_path, save_path, colormap='inferno'):
 
 ##### ROI Selection Functions (also saves drawn ROIs to csv for future use)
 class DrawAndLabelPolyROIS:
+    """
+    ROI drawer with:
+      • Precise zoom/pan, cursor-anchored zoom
+      • Inferno colormap + percentile stretch + optional CLAHE
+      • Window overlay/status bar help (never overlaps image)
+      • Persistent saved ROIs
+    Controls:
+      Left (click)=add point | Left-drag=pan | = in | - out
+      Right=close ROI | f=fit | u=undo | c=clear | x/ESC=save & exit | h=toggle help
+    """
 
     def __init__(self, image_path, roi_filepath='rois.csv'):
         self.image_path = image_path
         self.roi_filepath = roi_filepath
-        self._rois = []
-        self._roi_points = []
-        self._image_data = None
+        self.win = (
+            "INSTRUCTIONS | Left: add | Left-drag: pan | =: zoom in | -: zoom out | Right: close ROI | f: fit | u: undo | c: clear | x/ESC: save & exit"
+        )
+
+        # image/display
+        self._raw_gray = None          # float32 grayscale source
+        self._img = None               # BGR uint8 display image (contrast + inferno)
+        self.scale = 1.0               # zoom scale
+        self.offset = np.array([0.0, 0.0], dtype=np.float32)  # image top-left in window coords
+
+        # contrast settings
+        self.clahe_on = True
+        self.clahe_clip = 4.0
+        self.percentile_pairs = [(2.0, 98.0), (1.0, 99.0), (0.5, 99.5)]
+        self.percentile_pair_idx = 1   # start at 1–99%
+
+        # roi state
+        self._rois = []                # [{'label': 'roi_1', 'points': [(x,y), ...]}, ...]
+        self._roi_points = []          # current polygon (image coords)
         self._roi_counter = 1
-    
+
+        # mouse/gesture
+        self.lbtn_down = False
+        self.pan_active = False
+        self.pan_last_win = None
+        self.click_start_win = None
+        self.click_start_time = 0.0
+        self.pan_time_threshold = 0.15   # seconds to treat as long press
+        self.pan_move_threshold = 4.0    # px movement to start pan
+
+        # help overlay
+        self._overlay_on = True
+
+    # ---------- image loading & display build ----------
+    def _load_image(self):
+        with Image.open(self.image_path) as im:
+            arr = np.array(im)
+
+        # collapse to grayscale float32 for consistent contrast ops
+        if arr.ndim == 3 and arr.shape[2] == 3:
+            arr = cv2.cvtColor(arr, cv2.COLOR_BGR2GRAY)
+        elif arr.ndim == 3 and arr.shape[2] == 4:
+            arr = cv2.cvtColor(arr, cv2.COLOR_BGRA2GRAY)
+        arr = arr.astype(np.float32)
+
+        self._raw_gray = arr
+        self._img = self._make_display_image(self._raw_gray)
+
+    def _make_display_image(self, gray_f32):
+        # 1) percentile stretch
+        lo_p, hi_p = self.percentile_pairs[self.percentile_pair_idx]
+        lo = float(np.nanpercentile(gray_f32, lo_p))
+        hi = float(np.nanpercentile(gray_f32, hi_p))
+        if not np.isfinite(lo) or not np.isfinite(hi) or hi <= lo:
+            lo, hi = float(np.nanmin(gray_f32)), float(np.nanmax(gray_f32))
+        x = np.clip((gray_f32 - lo) / max(hi - lo, 1e-6), 0.0, 1.0)
+
+        # 2) 8-bit
+        x8 = (x * 255.0).astype(np.uint8)
+
+        # 3) CLAHE (optional)
+        if self.clahe_on:
+            clahe = cv2.createCLAHE(clipLimit=float(self.clahe_clip), tileGridSize=(8, 8))
+            x8 = clahe.apply(x8)
+
+        # 4) inferno colormap (BGR)
+        disp = cv2.applyColorMap(x8, cv2.COLORMAP_INFERNO)
+        return disp
+
+    def _rebuild_display(self):
+        if self._raw_gray is None:
+            return
+        self._img = self._make_display_image(self._raw_gray)
+        self._render()
+
+    # ---------- coordinate transforms ----------
+    def _img_to_win(self, pt_img):
+        return (pt_img * self.scale + self.offset).astype(int)
+
+    def _win_to_img(self, pt_win):
+        p = (np.array(pt_win, dtype=np.float32) - self.offset) / max(self.scale, 1e-6)
+        h, w = self._img.shape[:2]
+        p[0] = np.clip(p[0], 0, w - 1)
+        p[1] = np.clip(p[1], 0, h - 1)
+        return p
+
+    # ---------- drawing ----------
+    def _marker_radius(self):
+        return max(1, int(3 * (self.scale ** 0.5)))
+
+    def _draw_saved_rois(self, canvas):
+        for roi in self._rois:
+            pts = np.array(roi['points'], dtype=np.float32)
+            if pts.size == 0: 
+                continue
+            ptsw = np.array([self._img_to_win(p) for p in pts], dtype=int)
+            for i in range(len(ptsw)):
+                cv2.line(canvas, tuple(ptsw[i]), tuple(ptsw[(i+1) % len(ptsw)]), (0, 255, 0), 1, cv2.LINE_AA)
+            lx, ly = ptsw[0]
+            cv2.putText(canvas, roi['label'], (lx+5, ly-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1, cv2.LINE_AA)
+
+    def _draw_current_roi(self, canvas):
+        if not self._roi_points:
+            return
+        ptsw = np.array([self._img_to_win(np.array(p)) for p in self._roi_points], dtype=int)
+        for i in range(1, len(ptsw)):
+            cv2.line(canvas, tuple(ptsw[i-1]), tuple(ptsw[i]), (0, 0, 255), 1, cv2.LINE_AA)
+        for p in ptsw:
+            cv2.circle(canvas, tuple(p), self._marker_radius(), (0,0,255), -1, cv2.LINE_AA)
+
+    # ---------- render ----------
+    def _render(self):
+        if self._img is None:
+            return
+
+        ih, iw = self._img.shape[:2]
+
+        # Query current window size; if not ready, approximate from scale
+        try:
+            _, _, win_w, win_h = cv2.getWindowImageRect(self.win)
+            if win_w <= 0 or win_h <= 0:
+                win_w, win_h = int(iw * self.scale), int(ih * self.scale)
+        except Exception:
+            win_w, win_h = int(iw * self.scale), int(ih * self.scale)
+
+        # Build scaled image
+        disp_w, disp_h = max(1, int(iw * self.scale)), max(1, int(ih * self.scale))
+        disp = cv2.resize(self._img, (disp_w, disp_h), interpolation=cv2.INTER_NEAREST)
+
+        # Canvas for viewing area
+        canvas = np.zeros((max(1, win_h), max(1, win_w), 3), dtype=np.uint8)
+
+        # Clamp panning so image remains reachable
+        min_x = min(0, win_w - disp_w)
+        min_y = min(0, win_h - disp_h)
+        self.offset[0] = float(np.clip(self.offset[0], min_x, 0))
+        self.offset[1] = float(np.clip(self.offset[1], min_y, 0))
+
+        # Paste disp with offset
+        x0 = int(round(self.offset[0])); y0 = int(round(self.offset[1]))
+        sx0 = max(0, -x0); sy0 = max(0, -y0)
+        sx1 = min(disp_w, win_w - x0); sy1 = min(disp_h, win_h - y0)
+        dx0 = max(0, x0);  dy0 = max(0, y0)
+        if sx1 > sx0 and sy1 > sy0:
+            canvas[dy0:dy0 + (sy1 - sy0), dx0:dx0 + (sx1 - sx0)] = disp[sy0:sy1, sx0:sx1]
+
+        # Draw ROIs on top
+        self._draw_saved_rois(canvas)
+        self._draw_current_roi(canvas)
+
+        cv2.imshow(self.win, canvas)
+        self._view = canvas
+
+        # Refresh overlay if enabled (keeps it visible on some backends)
+        if self._overlay_on:
+            self._show_controls_overlay()
+
+    # ---------- overlay/status bar help ----------
+    def _show_controls_overlay(self):
+        help_text = (
+            "Left: add | Left-drag: pan | Wheel/+/=: zoom in | -: zoom out\n"
+            "Right: close ROI | f: fit | 1: 1:1 | u: undo | c: clear | x/ESC: save & exit"
+        )
+        try:
+            cv2.displayOverlay(self.win, help_text, 0)  # persist
+            cv2.displayStatusBar(self.win, "Press 'h' to hide/show controls", 0)
+            # Optional: window title hint
+            cv2.setWindowTitle(self.win, "Thermal Image with ROIs — press 'h' for controls")
+        except Exception:
+            # If your OpenCV build doesn't support overlay/status bar, just ignore.
+            pass
+
+    # ---------- zoom helpers ----------
+    def _zoom_at_window_point(self, wx, wy, factor):
+        prev = self.scale
+        new  = float(np.clip(prev * factor, 0.02, 50.0))
+        if new == prev:
+            return
+        cursor_img = self._win_to_img((wx, wy))
+        self.scale = new
+        cursor_win_new = self._img_to_win(cursor_img)
+        self.offset += (np.array([wx, wy], dtype=np.float32) - cursor_win_new.astype(np.float32))
+        self._render()
+
+    def _window_center(self):
+        try:
+            _, _, ww, wh = cv2.getWindowImageRect(self.win)
+        except Exception:
+            wh, ww = self._img.shape[:2]
+        return ww // 2, wh // 2
+
+    def _fit_to_window(self):
+        ih, iw = self._img.shape[:2]
+        # Choose a reasonable base window (doesn't auto-resize later)
+        base_w, base_h = 1100, 800
+        try:
+            cv2.resizeWindow(self.win, base_w, base_h)
+        except Exception:
+            pass
+        fit_scale = min(base_w / max(1, iw), base_h / max(1, ih))
+        self.scale = float(np.clip(fit_scale, 0.02, 50.0))
+        disp_w, disp_h = int(iw * self.scale), int(ih * self.scale)
+        self.offset = np.array([(base_w - disp_w) / 2.0, (base_h - disp_h) / 2.0], dtype=np.float32)
+        self._render()
+
+    def _one_to_one(self):
+        ih, iw = self._img.shape[:2]
+        try:
+            _, _, ww, wh = cv2.getWindowImageRect(self.win)
+        except Exception:
+            ww, wh = iw, ih
+        self.scale = 1.0
+        self.offset = np.array([(ww - iw) / 2.0, (wh - ih) / 2.0], dtype=np.float32)
+        self._render()
+
+    # ---------- mouse handler ----------
+    def _on_mouse(self, event, x, y, flags, param):
+        # Robust wheel handling (varies by platform)
+        if event == cv2.EVENT_MOUSEWHEEL:
+            delta = flags >> 16
+            if delta == 0:
+                delta = flags
+            zoom_in = delta > 0
+            self._zoom_at_window_point(x, y, 1.15 if zoom_in else 1/1.15)
+            return
+
+        if event == cv2.EVENT_LBUTTONDOWN:
+            self.lbtn_down = True
+            self.pan_active = False
+            self.click_start_win = np.array([x, y], dtype=np.float32)
+            self.pan_last_win = self.click_start_win.copy()
+            self.click_start_time = time.time()
+            return
+
+        if event == cv2.EVENT_MOUSEMOVE and self.lbtn_down:
+            cur = np.array([x, y], dtype=np.float32)
+            dt = time.time() - self.click_start_time
+            moved = np.linalg.norm(cur - self.click_start_win)
+            if (dt >= self.pan_time_threshold) or (moved >= self.pan_move_threshold):
+                self.pan_active = True
+                delta = cur - self.pan_last_win
+                self.pan_last_win = cur
+                self.offset += delta
+                self._render()
+            return
+
+        if event == cv2.EVENT_LBUTTONUP:
+            was_pan = self.pan_active
+            self.lbtn_down = False
+            self.pan_active = False
+            if not was_pan:
+                p_img = self._win_to_img((x, y))
+                self._roi_points.append((float(p_img[0]), float(p_img[1])))
+                self._render()
+            return
+
+        if event == cv2.EVENT_RBUTTONDOWN:
+            if len(self._roi_points) >= 3:
+                self._rois.append({
+                    'label': f'roi_{self._roi_counter}',
+                    'points': [(int(round(px)), int(round(py))) for (px, py) in self._roi_points]
+                })
+                self._roi_points = []
+                self._roi_counter += 1
+                self._render()
+            return
+
+    # ---------- main ----------
     def draw_and_label_poly_rois(self):
-        """
-        Interactively draw and label polygonal regions of interest (ROIs) on a thermal image.
+        self._load_image()
+        cv2.namedWindow(self.win, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
+        cv2.setMouseCallback(self.win, self._on_mouse)
 
-        Parameters:
-        image_path (str): Path to the thermal image file.
+        # initial fit + overlay
+        self._fit_to_window()
+        if self._overlay_on:
+            self._show_controls_overlay()
 
-        Returns:
-        list: A list of dictionaries. Each dictionary contains the label and points of an ROI.
-        
-        Usage:
-        - Left-click to add points to the polygon.
-        - Right-click to complete the polygon and label it.
-        - Press 'x' to exit and save the labeled polygons to a CSV file.
+        print("Controls: Left click: add, Left-drag: pan, = zoom in, -: zoom out, Right click:close, "
+              "f:fit, , u:undo, c:clear, x/ESC:save & exit")
 
-        Notes:
-        The function will also display basic instructions on the image window.
-        The drawn ROIs are saved to a CSV file using the save_rois_to_csv function.
-        """
-        image_data = display_tiff_with_colormap(self.image_path)
-        self._image_data = image_data
-        cv2.namedWindow('Thermal Image with ROIs', cv2.WINDOW_NORMAL)
-
-        # rois = []
-        # roi_points = []
-
-        cv2.setMouseCallback('Thermal Image with ROIs', self.draw_roi)
-
-        cv2.imshow('Thermal Image with ROIs', self.overlay_instructions(self._image_data))
-
-        print("Draw ROIs on the image. Right-click to complete an ROI. Press 'x' to exit.")
         while True:
-            key = cv2.waitKey(1) & 0xFF
-            if key == ord('x'):
-                # cv2.destroyAllWindows() TODO remove this is not needed one statement works
-                cv2.waitKey(1)
+            key = cv2.waitKey(10) & 0xFF
+            if key in (ord('x'), 27):
                 break
-            if cv2.getWindowProperty('Thermal Image with ROIs', cv2.WND_PROP_VISIBLE) < 1:
-                cv2.waitKey(1)
+            elif key == ord('u'):
+                if self._roi_points:
+                    self._roi_points.pop()
+                    self._render()
+            elif key == ord('c'):
+                self._roi_points = []
+                self._render()
+            elif key in (ord('+'), ord('=')):
+                wx, wy = self._window_center()
+                self._zoom_at_window_point(wx, wy, 1.15)
+            elif key == ord('-'):
+                wx, wy = self._window_center()
+                self._zoom_at_window_point(wx, wy, 1/1.15)
+            elif key == ord('f'):
+                self._fit_to_window()
+            elif key == ord('1'):
+                self._one_to_one()
+            elif key == ord('h'):
+                self._overlay_on = not self._overlay_on
+                try:
+                    if self._overlay_on:
+                        self._show_controls_overlay()
+                    else:
+                        cv2.displayOverlay(self.win, "", 1)
+                        cv2.displayStatusBar(self.win, "", 1)
+                except Exception:
+                    pass
+            # Optional contrast hotkeys if you want live control:
+            elif key == ord('a'):  # toggle CLAHE
+                self.clahe_on = not self.clahe_on
+                self._rebuild_display()
+            elif key == ord('p'):  # cycle percentile pairs
+                self.percentile_pair_idx = (self.percentile_pair_idx + 1) % len(self.percentile_pairs)
+                self._rebuild_display()
+            elif key == ord('['):
+                self.clahe_clip = max(1.0, self.clahe_clip - 0.5)
+                if self.clahe_on: self._rebuild_display()
+            elif key == ord(']'):
+                self.clahe_clip = min(12.0, self.clahe_clip + 0.5)
+                if self.clahe_on: self._rebuild_display()
+
+            if cv2.getWindowProperty(self.win, cv2.WND_PROP_VISIBLE) < 1:
                 break
+
         cv2.destroyAllWindows()
-    
         self.save_rois_to_csv()
         return self._rois
 
-    def overlay_instructions(self, img):
-        # Copy the original image so we don't modify it directly
-        overlay_img = img.copy()
-        instructions = [
-            ("Left click: Add point", (10, 30)),
-            ("Right click: Complete ROI", (10, 60)),
-            ("Press 'x': Exit", (10, 90))
-        ]
-
-        for text, position in instructions:
-            cv2.putText(overlay_img, text, position, cv2.FONT_HERSHEY_SIMPLEX, 
-                        0.7, (255, 255, 255), 2, cv2.LINE_AA)
-        
-        return overlay_img
-
-    def draw_roi(self, event, x, y, flags, param):
-        # nonlocal roi_points
-        
-        # Get the dimensions of the displayed window
-        window_width = cv2.getWindowImageRect('Thermal Image with ROIs')[2]
-        window_height = cv2.getWindowImageRect('Thermal Image with ROIs')[3]
-        
-        # Normalize x and y coordinates to match image's actual size
-        # x = int(x * (image_data.shape[1] / window_width))
-        # y = int(y * (image_data.shape[0] / window_height))
-
-        if event == cv2.EVENT_LBUTTONDOWN:
-            self._roi_points.append((x, y))
-            cv2.circle(self._image_data, (x, y), 5, (0, 0, 255), -1)
-            if len(self._roi_points) > 1:
-                cv2.line(self._image_data, self._roi_points[-2], self._roi_points[-1], (0, 0, 255), 2)
-            # print(f"x: {x} y: {y}")
-            cv2.imshow('Thermal Image with ROIs', self.overlay_instructions(self._image_data))
-
-        elif event == cv2.EVENT_RBUTTONDOWN:
-            if len(self._roi_points) > 2:
-                cv2.line(self._image_data, self._roi_points[-1], self._roi_points[0], (0, 0, 255), 2)
-                cv2.imshow('Thermal Image with ROIs', self.overlay_instructions(self._image_data))
-
-                
-                # label = input("Enter label for this ROI: ")
-
-                self._rois.append({'label': f'roi_{self._roi_counter}', 'points': self._roi_points.copy()})
-                self._roi_points = []
-                self._roi_counter += 1
-
-
-
+    # ---------- CSV ----------
     def save_rois_to_csv(self):
-        """
-        Save labeled regions of interest (ROIs) to a CSV file.
-
-        Parameters:
-        rois (list): A list of dictionaries. Each dictionary contains the label and points of an ROI.
-                    Expected format for each dictionary: {'label': 'some_label', 'points': [(x1, y1), (x2, y2), ...]}
-        filename (str, optional): Name of the CSV file to save the data to. Defaults to "rois.csv".
-
-        Returns:
-        None
-
-        Notes:
-        The CSV file will have the following format:
-        Label, Point_1_x, Point_1_y, Point_2_x, Point_2_y, ...
-        label1, x1, y1, x2, y2, ...
-        label2, x1, y1, x2, y2, ...
-        ...
-        
-        The number of Point_x_x and Point_x_y columns will vary based on the maximum number of points in the provided ROIs.
-        """
         with open(self.roi_filepath, 'w', newline='') as csvfile:
             csvwriter = csv.writer(csvfile)
-            
-            try:
-                # Write header
-                headers = ["Label"]
-                max_points = max(len(roi['points']) for roi in self._rois)
-                for i in range(max_points):
-                    headers.extend([f"Point_{i+1}_x", f"Point_{i+1}_y"])
-                csvwriter.writerow(headers)
-                
-                # Write ROI data
-                for roi in self._rois:
-                    row_data = [roi['label']]
-                    for point in roi['points']:
-                        row_data.extend([point[0], point[1]])
-                    csvwriter.writerow(row_data)
-            except Exception as err:
-                print('DrawROI error or no roi produced.')
-
-
-##### Load ROI from Shapefile Function
-def convert_shapefile_to_csv(shapefile_path, csv_path):
-    """
-    Convert a shapefile to a CSV file in the specified format with vertically flipped coordinates.
-
-    Parameters:
-    shapefile_path (str): Path to the shapefile.
-    csv_path (str): Path where the CSV file will be saved.
-
-    The CSV file format will be:
-    Label, Point_1_x, Point_1_y, Point_2_x, Point_2_y, ...
-    """
-    # Load the shapefile
-    gdf = gpd.read_file(shapefile_path)
-
-    # Determine the maximum height (for flipping the y-coordinate)
-    max_height = max([row['geometry'].bounds[3] for _, row in gdf.iterrows()])
-
-    # Open a CSV file to write the data
-    with open(csv_path, 'w', newline='') as csvfile:
-        csvwriter = csv.writer(csvfile)
-
-        # Write the header
-        headers = ["Label"]
-        max_points = max(len(row['geometry'].exterior.coords) for _, row in gdf.iterrows())
-        for i in range(max_points):
-            headers.extend([f"Point_{i+1}_x", f"Point_{i+1}_y"])
-        csvwriter.writerow(headers)
-
-        # Write the data
-        for _, row in gdf.iterrows():
-            label = row['crown']
-            points = list(row['geometry'].exterior.coords)
-
-            # Flip the y-coordinates and flatten the list of points to write to CSV
-            row_data = [label]
-            for point in points:
-                flipped_y = max_height - point[1]  # Flip the y-coordinate
-                row_data.extend([point[0], flipped_y])
-            csvwriter.writerow(row_data)
+            headers = ["Label"]
+            max_pts = max((len(r['points']) for r in self._rois), default=0)
+            for i in range(max_pts):
+                headers += [f"Point_{i+1}_x", f"Point_{i+1}_y"]
+            csvwriter.writerow(headers)
+            for roi in self._rois:
+                row = [roi['label']]
+                for x, y in roi['points']:
+                    row += [int(round(x)), int(round(y))]
+                csvwriter.writerow(row)
 
 
 ##### ROI Review Functions from .csv

@@ -1,6 +1,7 @@
 
 # Standard library imports
 import csv
+import time
 
 # Third-party imports
 import numpy as np

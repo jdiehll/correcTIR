@@ -460,7 +460,7 @@ For each Region of Interest (ROI_X), the following values are computed as additi
 | Column Header                   | Description                                                                                   |
 |--------------------------------|-----------------------------------------------------------------------------------------------|
 | ROI_X_{stat}_uncorrected       | Uncorrected thermal reading for {stat} (mean or percentile).                                 |
-| ROI_X_{stat}_uncorrected_std       | Uncorrected thermal reading for {stat} (mean or percentile) standard deviation.                                 |
+| ROI_X_mean_uncorrected_std       | Uncorrected thermal reading standard deviation for mean.                                 |
 | ROI_X_{stat}_fully_corrected   | Fully corrected thermal reading for {stat}.                                                   |
 | ROI_X_{stat}_tau1              | Thermal reading for {stat} with atmospheric corrections turned off.                           |
 | ROI_X_{stat}_twin1             | Thermal reading for {stat} with enclosure window corrections turned off.                      |

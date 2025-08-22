@@ -290,7 +290,7 @@ def initialize_data_from_config_image(config_path):
     aux_columns = ["TIMESTAMP_END", "T_air", "RH", "LW_IN", "VF_2", "T_win"]
 
     # Conditionally exclude columns
-    if sky_percent == 100 or emissivity_vf2 == 1:
+    if sky_percent == 100:
         aux_columns = [col for col in aux_columns if col != "VF_2"]
     if win_transmittance == 1:
         aux_columns = [col for col in aux_columns if col != "T_win"]

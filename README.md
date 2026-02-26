@@ -355,6 +355,8 @@ For a full list of available functions and their required arguments, refer to th
 ## GUI
 For users who prefer a graphical user interface (GUI), the correcTIR GUI is available as a pre-compiled application for the three most commonly used operating systems. The GUI is designed exclusively for running the entire processing pipeline—it does not support running individual functions separately. The GUI walks users through all necessary inputs, generates a config.json file, and then runs the pipeline. Details on how to use the GUI are provided in the accompanying [paper's](https://doi.org/10.1016/j.agrformet.2026.111099) Supplemental Materials: Graphical User Interface.
 
+**The GUI only needs to be installed once (following installation steps below).** After that, the package can be run anytime by double-clicking on it as you would any other App.
+
 _Note: correcTIR is not available on mobile devices (Android, iPhone)._
 
 ### Installation
@@ -386,7 +388,7 @@ _Note it may be necessary to type python3 and not just python._
 
 For instructions on creating a Conda environment, refer to the [conda documentation](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html). 
 
-Once the virtual environment is created, install all required correcTIR dependencies (see [Requirements](#requirements) section). 
+Once the virtual environment is created, install all required correcTIR dependencies (see [Requirements](#requirements) section). **The package will not run without loading the dependencies.**
 
 4. Compiling App
 

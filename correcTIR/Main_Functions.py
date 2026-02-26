@@ -1276,15 +1276,17 @@ def process_and_export_corrected_point_data(Aux_Met_Data, aux_met_window, FLUX_M
         # Record the end time
         end_time = time.time()
 
-        # Calculate and print the total runtime
-        total_time = end_time - start_time
-
-        print(f"The function took {human_readable_time(total_time)} to run.")
         return result_df
     
     except Exception as e:
         print(f"Error processing {point_data_path}: {e}")
         return pd.DataFrame()
+
+    finally:
+        # Calculate and print the total runtime
+        total_time = end_time - start_time
+
+        print(f"The function took {human_readable_time(total_time)} to run.")
 
 # =============================================
 # DATAFRAME PROCESSING

@@ -12,7 +12,7 @@ Last Updated: August 15, 2025
 
 ### How to cite this package
 
->[![DOI](https://zenodo.org/badge/942243035.svg)](https://doi.org/10.5281/zenodo.15446494)
+[![DOI](https://img.shields.io/badge/DOI-10.1016%2Fj.agrformet.2026.111099-blue)](https://doi.org/10.1016/j.agrformet.2026.111099)
 
 * [Overview](#overview)
 * [Set-Up](#set-up)

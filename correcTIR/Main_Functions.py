@@ -10,6 +10,7 @@ import csv
 import time
 import threading
 import warnings
+import queue
 
 # Third-party package imports (ensure these are installed)
 import pandas as pd  # Data manipulation
@@ -20,6 +21,8 @@ import tkinter as tk  # GUI components
 from tkinter import messagebox
 from tkinter import ttk  # Themed widgets for Tkinter
 from collections import OrderedDict
+
+
 
 # =============================================
 # CONFIGURATION HANDLING
@@ -163,72 +166,70 @@ def setup_gui_and_start_point(Aux_Met_Data, aux_met_window, FLUX_Met_Data, flux_
     point_dist (float): Distance value for the point data.
     output_csv_path (str): Path to the output CSV file where the results will be saved.
     """
+
     root = tk.Tk()
     root.title("Processing Point Data")
 
     progress_bar = ttk.Progressbar(root, orient="horizontal", length=300, mode="determinate")
     progress_bar.pack(pady=10)
 
-    # Label for showing the processing status
     status_label = tk.Label(root, text="Starting...")
     status_label.pack(pady=10)
 
-    # Load point data to determine the number of rows
     point_data = pd.read_csv(point_data_path)
     total_rows = len(point_data)
+    progress_bar["maximum"] = total_rows
 
-    # Set progress bar maximum value
-    progress_bar['maximum'] = total_rows
+    q = queue.Queue()
 
-    # Function to update progress
-    def update_progress(processed_df):
-        result_df = processed_df
-        if not result_df.empty:
-            result_df.to_csv(output_csv_path, index=False)
-        status_label.config(text="Processing complete.")
-        root.quit()
+    def progress_cb(i):
+        q.put(("progress", i))
 
-    # Function to process point data and update the progress bar
-    def process_and_update_progress():
+    def worker():
         try:
-            processed_df = process_and_export_corrected_point_data(Aux_Met_Data, aux_met_window, FLUX_Met_Data, flux_met_window, sky_percent, emissivity_vf2, emissivity_target, elevation, win_transmittance, point_data_path, point_dist, output_csv_path)
-            update_progress(processed_df)
-
+            df = process_and_export_corrected_point_data(
+                Aux_Met_Data, aux_met_window, FLUX_Met_Data, flux_met_window,
+                sky_percent, emissivity_vf2, emissivity_target, elevation,
+                win_transmittance, point_data_path, point_dist, output_csv_path,
+                progress_cb=progress_cb
+            )
+            q.put(("done", df))
         except Exception as e:
-            print(f"Error during processing: {e}")
-            status_label.config(text="Processing failed.")
-            root.quit()
+            q.put(("error", str(e)))
 
-    # Start the processing in a separate thread
-    processing_thread = threading.Thread(target=process_and_update_progress)
-    processing_thread.start()
+    threading.Thread(target=worker, daemon=True).start()
 
-    # Periodically update the progress bar
-    def update_progress_bar():
-        processed_rows = min(progress_bar['value'] + 1, total_rows)
-        progress_bar['value'] = processed_rows
-        status_label.config(text=f"Processing row {processed_rows} of {total_rows}")
-        root.update_idletasks()
-        if progress_bar['value'] < total_rows:
-            root.after(100, update_progress_bar)
+    def poll_queue():
+        try:
+            while True:
+                msg = q.get_nowait()
 
-    update_progress_bar()
+                if msg[0] == "progress":
+                    i = msg[1]
+                    progress_bar["value"] = i
+                    status_label.config(text=f"Processing row {i} of {total_rows}")
 
-    # Function to close the window when processing is complete
-    def close_window():
-        root.destroy()
-        messagebox.showinfo("Point Data", "Point data processing complete!")
+                elif msg[0] == "done":
+                    df = msg[1]
+                    if df is not None and not df.empty:
+                        df.to_csv(output_csv_path, index=False)
+                    progress_bar["value"] = total_rows
+                    status_label.config(text="Processing complete.")
+                    root.after(300, lambda: (root.destroy(),
+                                            messagebox.showinfo("Point Data", "Point data processing complete!")))
+                    return
 
-    # Check if the progress bar is complete and close the window
-    def check_progress():
-        if progress_bar['value'] >= progress_bar['maximum']:
-            status_label.config(text="Processing complete.")
-            root.after(1000, close_window)
-        else:
-            root.after(500, check_progress)
+                elif msg[0] == "error":
+                    status_label.config(text=f"Processing failed: {msg[1]}")
+                    root.after(300, root.destroy)
+                    return
 
-    root.after(500, check_progress)
+        except queue.Empty:
+            pass
 
+        root.after(50, poll_queue)
+
+    poll_queue()
     root.mainloop()
 
 # =============================================
@@ -1181,7 +1182,7 @@ def find_matching_logger_data_point(timestamp, Aux_Met_Data, FLUX_Met_Data, Aux_
 
     return file_data
 
-def process_and_export_corrected_point_data(Aux_Met_Data, aux_met_window, FLUX_Met_Data, flux_met_window, sky_percent, emissivity_vf2, emissivity_target, elevation, win_transmittance, point_data_path, point_dist, output_csv_path):
+def process_and_export_corrected_point_data(Aux_Met_Data, aux_met_window, FLUX_Met_Data, flux_met_window, sky_percent, emissivity_vf2, emissivity_target, elevation, win_transmittance, point_data_path, point_dist, output_csv_path, progress_cb=None):
     """
     Process and export corrected point data, including meteorological values.
 
@@ -1263,6 +1264,10 @@ def process_and_export_corrected_point_data(Aux_Met_Data, aux_met_window, FLUX_M
                 # Append to the list
                 processed_data.append(data_entry)
 
+                #updating progress bar
+                if progress_cb:
+                    progress_cb(i)
+                    
             except Exception as err:
                 print(f"There was an exception correcting point data: {err}")
                 continue

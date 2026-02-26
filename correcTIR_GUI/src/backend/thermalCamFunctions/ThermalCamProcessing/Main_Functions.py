@@ -765,10 +765,10 @@ def process_and_export_corrected_roi_means(
             required_fields.append('T_win')
 
         missing = [f for f in required_fields if file_data.get(f) is None]
-        if missing:
-            print(f"Skipping {image_path} due to missing fields: {', '.join(missing)}")
-            for f in missing:
-                file_data[f] = np.nan
+        can_correct = (len(missing) == 0)
+
+        if not can_correct:
+            print(f"Keeping row for {image_path} but leaving corrected fields blank; missing: {', '.join(missing)}")
 
         roi_stats = calculate_roi_means_for_tiff(image_path, roi_masks)
         percentiles_list = ["mean", 1, 5, 10, 25, 50, 75, 90, 95, 99]
@@ -794,11 +794,15 @@ def process_and_export_corrected_roi_means(
                 if key == "mean":
                     raw_std = roi_stats[label].get("mean_uncorrected_std", np.nan)
                     ordered_file_data[f"{label}_{key}_uncorrected_std"] = raw_std
-
+                
                 # Apply correction to the stat value only
-                cv, cv_twin1, cv_tau1, cv_emiss1 = correct_integer_image(
-                    value, file_data, emissivity_target, sky_percent, emissivity_vf2, win_transmittance
-                )
+                if can_correct:
+                    cv, cv_twin1, cv_tau1, cv_emiss1 = correct_integer_image(
+                        value, file_data, emissivity_target, sky_percent, emissivity_vf2, win_transmittance
+                    )
+                else:
+                    cv = cv_twin1 = cv_tau1 = cv_emiss1 = np.nan
+
                 ordered_file_data[f"{label}_{key}_fully_corrected"] = cv
                 ordered_file_data[f"{label}_{key}_tau1"]            = cv_tau1
                 ordered_file_data[f"{label}_{key}_twin1"]           = cv_twin1
@@ -1228,12 +1232,9 @@ def process_and_export_corrected_point_data(Aux_Met_Data, aux_met_window, FLUX_M
                 required_fields.append('VF_2')
             if win_transmittance != 1:
                 required_fields.append('T_win')
-
-            missing_fields = [field for field in required_fields if file_data.get(field) is None]
-            if missing_fields:
-                print(f"Skipping {image_path} due to missing fields: {', '.join(missing_fields)}")
-                for f in missing_fields:
-                    file_data[f] = np.nan
+            
+            missing = [f for f in required_fields if file_data.get(f) is None]
+            can_correct = (len(missing) == 0)
 
             # Calculate tau using the distance
             rho_v = file_data.get('rho_v')
@@ -1243,9 +1244,11 @@ def process_and_export_corrected_point_data(Aux_Met_Data, aux_met_window, FLUX_M
             file_data['tau'] = atm_trans(point_dist, rho_v)
 
             try:
+                if can_correct:
                 # Get four corrected outputs from correct_point_data
-                corrected_value, corrected_value_twin1, corrected_value_tau1, corrected_value_emiss1 = correct_point_data(point_value, file_data, emissivity_target, sky_percent, emissivity_vf2, win_transmittance)
-
+                    corrected_value, corrected_value_twin1, corrected_value_tau1, corrected_value_emiss1 = correct_point_data(point_value, file_data, emissivity_target, sky_percent, emissivity_vf2, win_transmittance)
+                else:
+                    corrected_value = corrected_value_twin1 = corrected_value_tau1 = corrected_value_emiss1 = np.na
                 # Initialize with timestamp first
                 data_entry = OrderedDict()
 

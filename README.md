@@ -45,6 +45,9 @@ The development of correcTIR is grounded in rigorous thermal theory, aiming to a
 
 >Johnston, M. R., Andreu, A., Verfaillie, J., Baldocchi, D., González-Dugo, M. P., & Moorcroft, P. R. (2021). Measuring surface temperatures in a woodland savanna: Opportunities and challenges of thermal imaging in an open-canopy ecosystem. Agricultural and Forest Meteorology, 310, 108484. https://doi.org/10.1016/j.agrformet.2021.108484
 
+<figure>
+    <img src='./Figures/TIRCameraSchematic.png' height="350" />
+</figure>
 
 ## Set-Up
 

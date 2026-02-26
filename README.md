@@ -6,13 +6,15 @@
 
 &nbsp;  <!-- Adds an empty space to create separation -->
 
-Last Updated: August 15, 2025
+Last Updated: February 26, 2026
 ## Python Package & GUI Documentation
 
 
 ### How to cite this package
 
-[![DOI](https://img.shields.io/badge/DOI-10.1016%2Fj.agrformet.2026.111099-blue)](https://doi.org/10.1016/j.agrformet.2026.111099)
+<a href="https://doi.org/10.1016/j.agrformet.2026.111099" target="_blank" rel="noopener noreferrer">
+  <img src="https://img.shields.io/badge/DOI-10.1016%2Fj.agrformet.2026.111099-blue" alt="DOI">
+</a>
 
 * [Overview](#overview)
 * [Set-Up](#set-up)

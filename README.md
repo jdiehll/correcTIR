@@ -56,7 +56,7 @@ This figure illustrates the five main components that contribute to the total si
   
 * Atmospheric emission (lower, blue path): Thermal energy emitted by the air column between the sensor and target
   
-* Atmospheric transmittance (dashed white lines): Partial absorption by atmospheric gases, mainly water vapor. Transmittance is usually high (∼97–99 %), with ∼1–3 % loss in near-surface applications.
+* Atmospheric transmittance (dashed white lines): Partial absorption by atmospheric gases, mainly water vapor
   
 * Enclosure window effects (dashed gray lines and turquoise path): If enclosed, the window attenuates incoming signals and contributes thermal energy through emission and internal reflections.
 

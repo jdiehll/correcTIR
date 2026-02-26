@@ -12,9 +12,8 @@ Last Updated: February 26, 2026
 
 ### How to cite this package
 
-<a href="https://doi.org/10.1016/j.agrformet.2026.111099" target="_blank" rel="noopener noreferrer">
-  <img src="https://img.shields.io/badge/DOI-10.1016%2Fj.agrformet.2026.111099-blue" alt="DOI">
-</a>
+[![DOI](https://img.shields.io/badge/DOI-10.1016%2Fj.agrformet.2026.111099-blue)](https://doi.org/10.1016/j.agrformet.2026.111099)
+*(opens external link)*
 
 * [Overview](#overview)
 * [Set-Up](#set-up)

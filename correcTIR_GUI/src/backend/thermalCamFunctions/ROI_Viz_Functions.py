@@ -17,6 +17,21 @@ import geopandas as gpd
 
 
 ##### Image Display Functions
+def _get_cmap(name):
+    """
+    Robust colormap getter across matplotlib versions
+    """
+    # Newer matplotlib (>=3.7)
+    if hasattr(matplotlib, "colormaps"):
+        try:
+            return matplotlib.colormaps[name]
+        except Exception:
+            if hasattr(matplotlib.colormaps, "get_cmap"):
+                return matplotlib.colormaps.get_cmap(name)
+
+    # Older matplotlib fallback
+    return cm.get_cmap(name)
+    
 def display_tiff_with_colormap(tiff_path, colormap='inferno'):
     """
     Convert a TIFF image with a specified colormap to a format suitable for OpenCV.
@@ -39,18 +54,6 @@ def display_tiff_with_colormap(tiff_path, colormap='inferno'):
     # Normalize data within 2 std deviation
     normalized_data = (image_data - (mean_val-2*std_val)) / (4*std_val)
     normalized_data = np.clip(normalized_data, 0, 1)
-    
-    def _get_cmap(name):
-    # Newer matplotlib: registry supports dict-style access
-    if hasattr(matplotlib, "colormaps"):
-        try:
-            return matplotlib.colormaps[name]
-        except Exception:
-            # Some versions expose get_cmap, some don't
-            if hasattr(matplotlib.colormaps, "get_cmap"):
-                return matplotlib.colormaps.get_cmap(name)
-    # Older matplotlib fallback
-    return cm.get_cmap(name)
     
     # Assuming 'colormap' is a variable holding the name of the colormap
     cmap = _get_cmap(colormap)

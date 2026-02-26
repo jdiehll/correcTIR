@@ -355,8 +355,6 @@ For a full list of available functions and their required arguments, refer to th
 ## GUI
 For users who prefer a graphical user interface (GUI), the correcTIR GUI is available as a pre-compiled application for the three most commonly used operating systems. The GUI is designed exclusively for running the entire processing pipeline—it does not support running individual functions separately. The GUI walks users through all necessary inputs, generates a config.json file, and then runs the pipeline. Details on how to use the GUI are provided in the accompanying [paper's](https://doi.org/10.1016/j.agrformet.2026.111099) Supplemental Materials: Graphical User Interface.
 
-For more details, see [Example Use](#example-use) section.
-
 _Note: correcTIR is not available on mobile devices (Android, iPhone)._
 
 ### Installation

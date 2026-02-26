@@ -54,7 +54,9 @@ class ThermoCam(tk.Tk):
         # create a container that all pages are displayed in.
         self.title('correcTIR')
         container = tk.Frame(self)
-        container.pack()
+        container.pack(fill="both", expand=True)
+        container.grid_rowconfigure(0, weight=1)
+        container.grid_columnconfigure(0, weight=1)
 
         self.frames = {}
         for F in (MainPage, 
@@ -81,6 +83,7 @@ class ThermoCam(tk.Tk):
         """
         frame = self.frames[page_name]
         frame.tkraise()
+        self.update_idletasks()
     
 if __name__ == "__main__":
     """ Start the Thermal Cam app. """

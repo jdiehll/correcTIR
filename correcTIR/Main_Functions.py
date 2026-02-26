@@ -1215,7 +1215,7 @@ def process_and_export_corrected_point_data(Aux_Met_Data, aux_met_window, FLUX_M
         # Initialize a list to hold the processed data
         processed_data = []
 
-        for i_, row in point_data.iterrows():
+        for i, (_, row) in enumerate(point_data.iterrows(), start=1):
             timestamp = row['timestamp']
             point_value = row['temp_value']
 

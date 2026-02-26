@@ -1,0 +1,16 @@
+{
+    "data": "point",
+    "aux_met_window": 5.0,
+    "flux_met_window": 5.0,
+    "output_csv_path": "/Users/jld664/Documents/correcTIR/test_pointoutput.csv",
+    "emissivity_target": 0.97,
+    "aux_met_data_path": "/Users/jld664/Documents/correcTIR/TestData/Point/tair_rh_vf2_twin_2017.csv",
+    "flux_met_data_path": "/Users/jld664/Documents/correcTIR/TestData/Point/LW_2017.csv",
+    "point_data_path": "/Users/jld664/Documents/correcTIR/TestData/Point/Niwot_point_test.csv",
+    "point_dist": 15.0,
+    "elevation": 3000.0,
+    "utc_offset": -6.0,
+    "emissivity_vf2": 1.0,
+    "sky_percent": 100.0,
+    "win_transmittance": 0.98
+}

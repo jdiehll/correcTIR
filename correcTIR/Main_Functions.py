@@ -1231,7 +1231,7 @@ def process_and_export_corrected_point_data(Aux_Met_Data, aux_met_window, FLUX_M
 
             missing_fields = [field for field in required_fields if file_data.get(field) is None]
             if missing_fields:
-                print(f"Skipping {image_path} due to missing fields: {', '.join(missing_fields)}")
+                print(f"Skipping row due to missing fields: {', '.join(missing_fields)}")
                 for f in missing_fields:
                     file_data[f] = np.nan
 

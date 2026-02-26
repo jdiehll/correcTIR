@@ -767,7 +767,8 @@ def process_and_export_corrected_roi_means(
         missing = [f for f in required_fields if file_data.get(f) is None]
         if missing:
             print(f"Skipping {image_path} due to missing fields: {', '.join(missing)}")
-            return None
+            for f in missing:
+                file_data[f] = np.nan
 
         roi_stats = calculate_roi_means_for_tiff(image_path, roi_masks)
         percentiles_list = ["mean", 1, 5, 10, 25, 50, 75, 90, 95, 99]
@@ -1231,7 +1232,8 @@ def process_and_export_corrected_point_data(Aux_Met_Data, aux_met_window, FLUX_M
             missing_fields = [field for field in required_fields if file_data.get(field) is None]
             if missing_fields:
                 print(f"Skipping {image_path} due to missing fields: {', '.join(missing_fields)}")
-                return None
+                for f in missing_fields:
+                    file_data[f] = np.nan
 
             # Calculate tau using the distance
             rho_v = file_data.get('rho_v')

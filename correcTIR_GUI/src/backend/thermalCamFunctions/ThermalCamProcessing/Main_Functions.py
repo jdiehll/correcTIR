@@ -1232,9 +1232,12 @@ def process_and_export_corrected_point_data(Aux_Met_Data, aux_met_window, FLUX_M
                 required_fields.append('VF_2')
             if win_transmittance != 1:
                 required_fields.append('T_win')
-            
-            missing = [f for f in required_fields if file_data.get(f) is None]
-            can_correct = (len(missing) == 0)
+
+            missing_fields = [field for field in required_fields if file_data.get(field) is None]
+            if missing_fields:
+                print(f"Skipping row due to missing fields: {', '.join(missing_fields)}")
+                for f in missing_fields:
+                    file_data[f] = np.nan
 
             # Calculate tau using the distance
             rho_v = file_data.get('rho_v')
@@ -1244,11 +1247,9 @@ def process_and_export_corrected_point_data(Aux_Met_Data, aux_met_window, FLUX_M
             file_data['tau'] = atm_trans(point_dist, rho_v)
 
             try:
-                if can_correct:
                 # Get four corrected outputs from correct_point_data
-                    corrected_value, corrected_value_twin1, corrected_value_tau1, corrected_value_emiss1 = correct_point_data(point_value, file_data, emissivity_target, sky_percent, emissivity_vf2, win_transmittance)
-                else:
-                    corrected_value = corrected_value_twin1 = corrected_value_tau1 = corrected_value_emiss1 = np.na
+                corrected_value, corrected_value_twin1, corrected_value_tau1, corrected_value_emiss1 = correct_point_data(point_value, file_data, emissivity_target, sky_percent, emissivity_vf2, win_transmittance)
+
                 # Initialize with timestamp first
                 data_entry = OrderedDict()
 

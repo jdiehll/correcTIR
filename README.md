@@ -282,6 +282,7 @@ _Note it may be necessary to type python3 and not just python._
 For instructions on creating a Conda environment, refer to the [conda documentation](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html). 
 
 Once the virtual environment is created, install all required correcTIR dependencies (see [Requirements](#requirements) section). 
+**The package will not run without loading the dependencies.**
 
 4. Pull the Latest Updates (Optional but Recommended)
 To update your local copy of the repository:

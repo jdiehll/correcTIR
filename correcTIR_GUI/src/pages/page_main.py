@@ -53,12 +53,12 @@ class MainPage(ttk.Frame):
 
         citation_link = ttk.Label(
             cite_frame,
-            text="DOI: 10.5281/zenodo.15446495",
+            text="DOI: 10.1016/j.agrformet.2026.111099",
             foreground="white",
             cursor="hand2"
         )
         citation_link.grid(row=1, column=0, pady=5, sticky="w")
         citation_link.bind(
             "<Button-1>",
-            lambda e: webbrowser.open("https://doi.org/10.5281/zenodo.15446495")
+            lambda e: webbrowser.open("https://doi.org/10.1016/j.agrformet.2026.111099")
         )

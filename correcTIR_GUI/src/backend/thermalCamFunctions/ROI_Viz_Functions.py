@@ -37,9 +37,22 @@ def display_tiff_with_colormap(tiff_path, colormap='inferno'):
     # Normalize data within 2 std deviation
     normalized_data = (image_data - (mean_val-2*std_val)) / (4*std_val)
     normalized_data = np.clip(normalized_data, 0, 1)
-
+    
+    def _get_cmap(name):
+    # Newer matplotlib: registry supports dict-style access
+    if hasattr(matplotlib, "colormaps"):
+        try:
+            return matplotlib.colormaps[name]
+        except Exception:
+            # Some versions expose get_cmap, some don't
+            if hasattr(matplotlib.colormaps, "get_cmap"):
+                return matplotlib.colormaps.get_cmap(name)
+    # Older matplotlib fallback
+    return cm.get_cmap(name)
+    
     # Assuming 'colormap' is a variable holding the name of the colormap
-    colored_image = (matplotlib.colormaps.get_cmap(colormap)(normalized_data)[:, :, :3] * 255).astype(np.uint8)
+    cmap = _get_cmap(colormap)
+    colored_image = (cmap(normalized_data)[..., :3] * 255).astype(np.uint8)
 
 
     return cv2.cvtColor(colored_image, cv2.COLOR_RGB2BGR)

@@ -48,7 +48,7 @@ The development of correcTIR is grounded in rigorous thermal theory, aiming to a
 <figure>
     <img src='./Figures/TIRCameraSchematic.png' height="350" />
 </figure>
-This figure illustrates the five main components that contribute to the total signal:
+This figure illustrates the five main components that contribute to the total signal that this software corrects for:
 
 * Reflected radiation (upper, orange path): Thermal energy from the sky and surroundings reflected off the canopy
   
@@ -57,7 +57,7 @@ This figure illustrates the five main components that contribute to the total si
 * Atmospheric emission (lower, blue path): Thermal energy emitted by the air column between the sensor and target
   
 * Atmospheric transmittance (dashed white lines): Partial absorption by atmospheric gases, mainly water vapor. Transmittance is usually high (∼97–99 %), with ∼1–3 % loss in near-surface applications.
-* 
+  
 * Enclosure window effects (dashed gray lines and turquoise path): If enclosed, the window attenuates incoming signals and contributes thermal energy through emission and internal reflections.
 
 Created in BioRender. Diehl, J. (2026) https://BioRender.com/mk8byh6.

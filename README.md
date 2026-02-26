@@ -620,4 +620,4 @@ Ensure numerical values are stored correctly (e.g., no missing values, text-form
 Check for unintended special characters (e.g., commas, spaces) that might interfere with parsing.
 
 ## Feedback
-For inquiries, suggestions, or feedback, please contact the author at jdiehl@nau.edu.
+For inquiries, suggestions, or feedback, please contact the author at jldiehl@umd.edu.

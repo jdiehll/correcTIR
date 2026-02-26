@@ -8,6 +8,8 @@ import numpy as np
 from PIL import Image
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib
+from matplotlib import cm
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 import cv2
